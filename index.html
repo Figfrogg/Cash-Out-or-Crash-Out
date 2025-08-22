@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GREED</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .game-container, .stats-modal-content {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .stat-box {
+            background-color: #334155;
+        }
+        .btn {
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #1d4ed8;
+        }
+        .btn-primary:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #4ade80;
+            color: #1e293b;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #22c55e;
+        }
+        .btn-secondary:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+        }
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        .input-field {
+            background-color: #0f172a;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+        }
+        .multiplier-display {
+            font-size: 4rem;
+            font-weight: 900;
+            color: #f8fafc;
+        }
+        .game-tab {
+            background-color: #334155;
+            color: #94a3b8;
+        }
+        .game-tab.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        #minesGrid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        .mine-tile {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #475569;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mine-tile:hover {
+            transform: scale(1.05);
+        }
+        .mine-tile.revealed {
+            cursor: default;
+            transform: scale(0.95);
+        }
+        .mine-tile.gem {
+            background-color: #10b981;
+        }
+        .mine-tile.mine {
+            background-color: #ef4444;
+        }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        #diceResultDisplay {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .stats-table th, .stats-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        .stats-table th {
+            background-color: #334155;
+        }
+        /* Blackjack Styles */
+        .card {
+            background-color: white;
+            color: black;
+            border-radius: 6px;
+            width: 60px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+        .card.red { color: #ef4444; }
+        .card.hidden { background-color: #94a3b8; }
+        .hand-container {
+            display: flex;
+            gap: 8px;
+            min-height: 100px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-center mb-2 text-slate-200">GREED</h1>
+        <p class="text-center text-slate-400 mb-6">Survive the Firewall. Maximize your score.</p>
+
+        <!-- Stats Display -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
+            <div class="stat-box p-4 rounded-lg">
+                <h2 class="text-sm font-semibold text-slate-400 uppercase">Current Cash</h2>
+                <p id="currentCash" class="text-2xl font-bold text-green-400">$100.00</p>
+            </div>
+            <div class="stat-box p-4 rounded-lg">
+                <h2 class="text-sm font-semibold text-slate-400 uppercase">Firewall</h2>
+                <p id="firewallValue" class="text-2xl font-bold text-red-400">$0.00</p>
+            </div>
+            <div class="stat-box p-4 rounded-lg">
+                <h2 class="text-sm font-semibold text-slate-400 uppercase">Run Time</h2>
+                <p id="runTime" class="text-2xl font-bold">00:00</p>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div id="gameArea" class="game-container p-6 rounded-lg shadow-lg hidden">
+            <!-- Game Tabs -->
+            <div class="flex space-x-2 mb-4">
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn active" data-game="crash">Crash</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="mines">Mines</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="dice">Dice</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
+            </div>
+
+            <!-- Game Displays -->
+            <div id="crashGame" class="game-display">
+                <div class="flex flex-col items-center justify-center h-48 mb-6 bg-slate-900/50 rounded-lg border border-slate-700">
+                    <p id="multiplier" class="multiplier-display">1.00x</p>
+                </div>
+            </div>
+            <div id="minesGame" class="game-display hidden">
+                 <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                    <div class="w-full max-w-xs" id="minesGrid"></div>
+                </div>
+            </div>
+            <div id="diceGame" class="game-display hidden">
+                <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                    <div id="diceResultDisplay" class="text-slate-500">--.--</div>
+                    <div class="w-full max-w-md">
+                        <input id="diceSlider" type="range" min="1" max="9999" value="5000" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="flex justify-between w-full max-w-md text-sm">
+                        <div><span class="font-semibold text-slate-400">Multiplier:</span> <span id="diceMultiplier" class="font-bold text-white">2.00x</span></div>
+                        <div><span class="font-semibold text-slate-400">Win Chance:</span> <span id="diceWinChance" class="font-bold text-white">50.00%</span></div>
+                    </div>
+                </div>
+            </div>
+            <div id="blackjackGame" class="game-display hidden">
+                <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                    <div>
+                        <h3 class="text-center font-bold">Dealer's Hand (<span id="dealerScore">0</span>)</h3>
+                        <div id="dealerHand" class="hand-container"></div>
+                    </div>
+                     <div>
+                        <h3 class="text-center font-bold">Your Hand (<span id="playerScore">0</span>)</h3>
+                        <div id="playerHand" class="hand-container"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <p id="gameMessage" class="text-lg text-center text-slate-400 mt-2 mb-4 h-8">&nbsp;</p>
+
+            <!-- Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="betAmount" class="block text-sm font-medium mb-1 text-slate-400">Bet Amount</label>
+                    <input type="number" id="betAmount" value="10" class="input-field w-full p-3 rounded-md shadow-inner">
+                    <div id="minesControls" class="mt-2 hidden">
+                         <label for="mineCount" class="block text-sm font-medium mb-1 text-slate-400">Mines (1-24)</label>
+                         <input type="number" id="mineCount" value="5" min="1" max="24" class="input-field w-full p-3 rounded-md shadow-inner">
+                    </div>
+                    <div id="diceControls" class="mt-2 hidden">
+                        <button id="diceBetTypeBtn" class="w-full btn bg-green-600 text-white font-bold py-2 rounded-md">Roll Under 50.00</button>
+                    </div>
+                    <div id="blackjackControls" class="mt-2 hidden flex space-x-2">
+                        <button id="hitBtn" class="w-full btn bg-yellow-500 text-slate-900 font-bold py-2 rounded-md">Hit</button>
+                        <button id="standBtn" class="w-full btn bg-blue-500 text-white font-bold py-2 rounded-md">Stand</button>
+                    </div>
+                </div>
+                <div class="flex flex-col space-y-2">
+                     <button id="placeBetBtn" class="w-full btn btn-primary font-bold py-3 rounded-md">Place Bet</button>
+                     <button id="cashOutBtn" class="w-full btn btn-secondary font-bold py-3 rounded-md" disabled>Cash Out</button>
+                </div>
+            </div>
+             <div class="mt-6 flex justify-center space-x-4">
+                <button id="viewStatsBtn" class="btn bg-indigo-600 hover:bg-indigo-700 font-bold py-3 px-8 rounded-md">View Stats</button>
+                <button id="endRunBtn" class="btn btn-danger font-bold py-3 px-8 rounded-md">End Run</button>
+            </div>
+            
+            <!-- Live Stats Bar -->
+            <div class="mt-6 pt-4 border-t border-slate-700 flex justify-around text-center">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase">Run Profit</h3>
+                    <p id="liveProfit" class="text-lg font-bold text-green-400">$0.00</p>
+                </div>
+                 <div>
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase">Bets Placed</h3>
+                    <p id="liveBets" class="text-lg font-bold">0</p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase">Win Rate</h3>
+                    <p id="liveWinRate" class="text-lg font-bold">N/A</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="startScreen" class="text-center p-6">
+             <button id="startRunBtn" class="btn btn-primary font-bold py-4 px-10 rounded-lg text-xl">Start New Run</button>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="fixed inset-0 items-center justify-center hidden modal-backdrop">
+        <div class="bg-slate-800 p-8 rounded-lg shadow-2xl text-center max-w-sm mx-auto border border-slate-600">
+            <h2 id="modalTitle" class="text-3xl font-bold mb-4">Run Over</h2>
+            <p id="modalMessage" class="text-slate-300 mb-2"></p>
+            <p class="text-lg mb-6">Final Score: <span id="finalScore" class="font-bold text-green-400"></span></p>
+            <button id="playAgainBtn" class="btn btn-primary font-bold py-3 px-6 rounded-md">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Stats Modal -->
+    <div id="statsModal" class="fixed inset-0 items-center justify-center hidden modal-backdrop p-4">
+        <div class="stats-modal-content p-6 rounded-lg shadow-2xl w-full max-w-3xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-3xl font-bold">Run Statistics</h2>
+                <button id="closeStatsBtn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <div class="mb-6">
+                <h3 class="font-semibold mb-2">Profit Graph</h3>
+                <div class="bg-slate-900 p-2 rounded"><canvas id="statsGraph" height="150"></canvas></div>
+            </div>
+            <table class="stats-table text-sm">
+                <thead><tr><th>Game</th><th>W/L</th><th>Win Rate</th><th>Profit</th><th>Wagered</th></tr></thead>
+                <tbody id="statsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DOM Elements ---
+        const currentCashEl = document.getElementById('currentCash');
+        const firewallValueEl = document.getElementById('firewallValue');
+        const runTimeEl = document.getElementById('runTime');
+        const gameMessageEl = document.getElementById('gameMessage');
+        const betAmountInput = document.getElementById('betAmount');
+        const placeBetBtn = document.getElementById('placeBetBtn');
+        const cashOutBtn = document.getElementById('cashOutBtn');
+        const startRunBtn = document.getElementById('startRunBtn');
+        const endRunBtn = document.getElementById('endRunBtn');
+        const viewStatsBtn = document.getElementById('viewStatsBtn');
+        const gameArea = document.getElementById('gameArea');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const finalScore = document.getElementById('finalScore');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const statsModal = document.getElementById('statsModal');
+        const closeStatsBtn = document.getElementById('closeStatsBtn');
+        const liveProfit = document.getElementById('liveProfit');
+        const liveBets = document.getElementById('liveBets');
+        const liveWinRate = document.getElementById('liveWinRate');
+        const gameTabs = document.querySelectorAll('.game-tab');
+        const gameDisplays = document.querySelectorAll('.game-display');
+        const multiplierEl = document.getElementById('multiplier');
+        const minesGridEl = document.getElementById('minesGrid');
+        const mineCountInput = document.getElementById('mineCount');
+        const minesControls = document.getElementById('minesControls');
+        const diceControls = document.getElementById('diceControls');
+        const diceSlider = document.getElementById('diceSlider');
+        const diceMultiplierEl = document.getElementById('diceMultiplier');
+        const diceWinChanceEl = document.getElementById('diceWinChance');
+        const diceBetTypeBtn = document.getElementById('diceBetTypeBtn');
+        const diceResultDisplay = document.getElementById('diceResultDisplay');
+        const statsGraphCanvas = document.getElementById('statsGraph');
+        const statsGraphCtx = statsGraphCanvas.getContext('2d');
+        const statsTableBody = document.getElementById('statsTableBody');
+
+        // Blackjack Elements
+        const blackjackControls = document.getElementById('blackjackControls');
+        const hitBtn = document.getElementById('hitBtn');
+        const standBtn = document.getElementById('standBtn');
+        const dealerHandEl = document.getElementById('dealerHand');
+        const playerHandEl = document.getElementById('playerHand');
+        const dealerScoreEl = document.getElementById('dealerScore');
+        const playerScoreEl = document.getElementById('playerScore');
+
+        // --- Game State ---
+        let state = {};
+
+        // --- Timers and Intervals ---
+        let runTimerInterval = null;
+        let crashLoopInterval = null;
+        let pausedTime = 0;
+        let timeAtPause = 0;
+
+        // --- Utility Functions ---
+        const formatCurrency = (value, sign = true) => {
+            const signChar = value >= 0 ? '+' : '-';
+            const absValue = Math.abs(value);
+            return `${sign ? signChar : ''}$${absValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
+        const formatTime = (seconds) => {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        };
+
+        // --- Core Game Logic ---
+        function createEmptyStats() {
+            return { wins: 0, losses: 0, wagered: 0, won: 0 };
+        }
+
+        function initializeRun() {
+            pausedTime = 0;
+            timeAtPause = 0;
+            state = {
+                runActive: true,
+                isPaused: false,
+                currentCash: 100.00,
+                maxCashReached: 100.00,
+                firewallValue: 0.00,
+                runStartTime: Date.now(),
+                gameInProgress: false,
+                currentBet: 0,
+                currentGame: 'crash',
+                crash: { multiplier: 1.00, crashPoint: 0 },
+                mines: { grid: [], rows: 5, cols: 5, mineCount: 5, gemsFound: 0, payoutMultiplier: 1.0 },
+                dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
+                blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
+                runStats: {
+                    cashHistory: [{ bet: 0, cash: 100.00 }],
+                    overall: createEmptyStats(),
+                    crash: createEmptyStats(),
+                    mines: createEmptyStats(),
+                    dice: createEmptyStats(),
+                    blackjack: createEmptyStats(),
+                }
+            };
+            startScreen.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            gameOverModal.classList.add('hidden');
+            gameOverModal.classList.remove('flex');
+            switchGame('crash');
+            startRunTimer();
+            updateUI();
+            updateLiveStatsUI();
+        }
+        
+        function startRunTimer() {
+            if (runTimerInterval) clearInterval(runTimerInterval);
+            runTimerInterval = setInterval(() => {
+                if (state.runActive && !state.isPaused) {
+                    const elapsedSeconds = Math.floor((Date.now() - state.runStartTime - pausedTime) / 1000);
+                    runTimeEl.textContent = formatTime(elapsedSeconds);
+                    calculateAndApplyFirewallTick();
+                    updateUI();
+                }
+            }, 1000);
+        }
+        
+        function pauseRun() {
+            if (state.isPaused) return;
+            state.isPaused = true;
+            timeAtPause = Date.now();
+        }
+
+        function resumeRun() {
+            if (!state.isPaused) return;
+            state.isPaused = false;
+            pausedTime += Date.now() - timeAtPause;
+        }
+
+        function calculateAndApplyFirewallTick() {
+            if (!state.runActive) return;
+            const elapsedSeconds = Math.floor((Date.now() - state.runStartTime - pausedTime) / 1000);
+            let tickRate = 0.01;
+            const gracePeriod = 30;
+            if (elapsedSeconds > gracePeriod) tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
+            if (state.maxCashReached > 1000000) tickRate *= 5;
+            else if (state.maxCashReached > 100000) tickRate *= 3;
+            else if (state.maxCashReached > 10000) tickRate *= 1.5;
+            state.firewallValue += tickRate;
+        }
+
+        function checkForFirewallMilestoneJump(oldMax, newMax) {
+            const milestones = [10000, 100000, 1000000];
+            let jumpAmount = 0;
+            milestones.forEach(ms => {
+                if (oldMax < ms && newMax >= ms) {
+                    if (ms === 10000) jumpAmount += 1000;
+                    if (ms === 100000) jumpAmount += 25000;
+                    if (ms === 1000000) jumpAmount += 500000;
+                }
+            });
+            if (jumpAmount > 0) state.firewallValue += jumpAmount;
+        }
+
+        function placeBet() {
+            if (state.gameInProgress) return;
+            const betAmount = parseFloat(betAmountInput.value);
+            if (isNaN(betAmount) || betAmount <= 0 || betAmount > state.currentCash) {
+                gameMessageEl.textContent = "Invalid bet amount.";
+                gameMessageEl.style.color = '#ef4444';
+                return;
+            }
+            state.currentBet = betAmount;
+            state.currentCash -= betAmount;
+            state.gameInProgress = true;
+            gameMessageEl.textContent = `Bet of ${formatCurrency(betAmount, false)} placed.`;
+            gameMessageEl.style.color = '#e2e8f0';
+            state.runStats.overall.wagered += betAmount;
+            state.runStats[state.currentGame].wagered += betAmount;
+            if (state.currentGame === 'crash') startCrashGame();
+            if (state.currentGame === 'mines') startMinesGame();
+            if (state.currentGame === 'dice') startDiceGame();
+            if (state.currentGame === 'blackjack') startBlackjackGame();
+            updateUI();
+        }
+
+        function cashOut() {
+            if (!state.gameInProgress) return;
+            let winnings = 0;
+            if (state.currentGame === 'crash') {
+                winnings = state.currentBet * state.crash.multiplier;
+                gameMessageEl.textContent = `Cashed out for ${formatCurrency(winnings, false)}!`;
+            } else if (state.currentGame === 'mines') {
+                winnings = state.currentBet * state.mines.payoutMultiplier;
+                gameMessageEl.textContent = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
+            }
+            handleWin(winnings);
+            gameMessageEl.style.color = '#4ade80';
+            resetGameRound();
+            updateUI();
+        }
+
+        function handleWin(winnings) {
+            const oldMaxCash = state.maxCashReached;
+            state.currentCash += winnings;
+            if (state.currentCash > state.maxCashReached) {
+                state.maxCashReached = state.currentCash;
+                checkForFirewallMilestoneJump(oldMaxCash, state.maxCashReached);
+            }
+            state.runStats.overall.wins++;
+            state.runStats.overall.won += winnings;
+            state.runStats[state.currentGame].wins++;
+            state.runStats[state.currentGame].won += winnings;
+            state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
+            updateLiveStatsUI();
+        }
+
+        function handleLoss() {
+            if (state.currentGame === 'crash') gameMessageEl.textContent = `Crashed at ${state.crash.crashPoint.toFixed(2)}x!`;
+            else if (state.currentGame === 'mines') {
+                gameMessageEl.textContent = `You hit a mine!`;
+                revealAllMines();
+            }
+            state.runStats.overall.losses++;
+            state.runStats[state.currentGame].losses++;
+            state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
+            updateLiveStatsUI();
+            gameMessageEl.style.color = '#ef4444';
+            resetGameRound();
+            if (state.currentCash < state.firewallValue) setTimeout(() => endRun(true), 1000);
+            updateUI();
+        }
+        
+        function resetGameRound() {
+            clearInterval(crashLoopInterval);
+            state.gameInProgress = false;
+            state.currentBet = 0;
+            state.crash.multiplier = 1.00;
+            state.mines.gemsFound = 0;
+            state.mines.payoutMultiplier = 1.0;
+            state.blackjack.status = 'betting';
+        }
+
+        function endRun(wasBust = false) {
+            state.runActive = false;
+            clearInterval(runTimerInterval);
+            clearInterval(crashLoopInterval);
+            const score = wasBust ? 0 : state.currentCash;
+            modalTitle.textContent = wasBust ? "Run Busted!" : "Run Complete!";
+            modalMessage.textContent = wasBust 
+                ? `Your cash dropped below the Firewall of ${formatCurrency(state.firewallValue, false)}.`
+                : "You successfully cashed out your run.";
+            finalScore.textContent = formatCurrency(score, false);
+            gameOverModal.classList.remove('hidden');
+            gameOverModal.classList.add('flex');
+            gameArea.classList.add('hidden');
+        }
+
+        // --- Game Specific Logic ---
+        function startCrashGame() {
+            state.crash.multiplier = 1.00;
+            const r = Math.random();
+            state.crash.crashPoint = 1 / (1 - r);
+            gameMessageEl.textContent = "Multiplier increasing...";
+            crashLoopInterval = setInterval(() => {
+                if (!state.gameInProgress) { clearInterval(crashLoopInterval); return; }
+                state.crash.multiplier += 0.01 * Math.pow(1.01, state.crash.multiplier);
+                if (state.crash.multiplier >= state.crash.crashPoint) handleLoss();
+                updateUI();
+            }, 100);
+        }
+
+        function startMinesGame() {
+            const mineCount = parseInt(mineCountInput.value);
+            if (isNaN(mineCount) || mineCount < 1 || mineCount > 24) {
+                 gameMessageEl.textContent = "Invalid mine count (1-24).";
+                 gameMessageEl.style.color = '#ef4444';
+                 state.gameInProgress = false;
+                 state.currentCash += state.currentBet;
+                 return;
+            }
+            state.mines.mineCount = mineCount;
+            state.mines.gemsFound = 0;
+            state.mines.payoutMultiplier = 1.0;
+            generateMinesGrid();
+            renderMinesGrid();
+            gameMessageEl.textContent = `Find the gems. Avoid the ${mineCount} mines.`;
+        }
+
+        function generateMinesGrid() {
+            const { rows, cols, mineCount } = state.mines;
+            const totalTiles = rows * cols;
+            state.mines.grid = Array(totalTiles).fill('gem');
+            let minesPlaced = 0;
+            while (minesPlaced < mineCount) {
+                const index = Math.floor(Math.random() * totalTiles);
+                if (state.mines.grid[index] !== 'mine') {
+                    state.mines.grid[index] = 'mine';
+                    minesPlaced++;
+                }
+            }
+        }
+
+        function renderMinesGrid() {
+            minesGridEl.innerHTML = '';
+            state.mines.grid.forEach((type, index) => {
+                const tile = document.createElement('button');
+                tile.classList.add('mine-tile');
+                tile.dataset.index = index;
+                tile.addEventListener('click', () => onMineTileClick(tile, index));
+                minesGridEl.appendChild(tile);
+            });
+        }
+
+        function onMineTileClick(tile, index) {
+            if (!state.gameInProgress || tile.classList.contains('revealed')) return;
+            tile.classList.add('revealed');
+            if (state.mines.grid[index] === 'mine') {
+                tile.classList.add('mine');
+                tile.innerHTML = '💣';
+                handleLoss();
+            } else {
+                tile.classList.add('gem');
+                tile.innerHTML = '💎';
+                state.mines.gemsFound++;
+                const totalTiles = state.mines.rows * state.mines.cols;
+                const totalGems = totalTiles - state.mines.mineCount;
+                state.mines.payoutMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
+                gameMessageEl.textContent = `Found ${state.mines.gemsFound} gems! Payout: ${state.mines.payoutMultiplier.toFixed(2)}x`;
+            }
+            updateUI();
+        }
+        
+        function revealAllMines() {
+             const tiles = minesGridEl.children;
+             state.mines.grid.forEach((type, index) => {
+                if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
+                    tiles[index].classList.add('revealed', 'mine');
+                    tiles[index].innerHTML = '💣';
+                }
+             });
+        }
+
+        function updateDiceUI() {
+            const sliderValue = parseInt(diceSlider.value);
+            state.dice.target = sliderValue / 100;
+            if (state.dice.betType === 'under') state.dice.winChance = state.dice.target;
+            else state.dice.winChance = 100 - state.dice.target;
+            if (state.dice.winChance <= 0) state.dice.winChance = 0.01;
+            if (state.dice.winChance >= 100) state.dice.winChance = 99.99;
+            const houseEdge = 0.99;
+            state.dice.multiplier = (100 / state.dice.winChance) * houseEdge;
+            diceMultiplierEl.textContent = `${state.dice.multiplier.toFixed(2)}x`;
+            diceWinChanceEl.textContent = `${state.dice.winChance.toFixed(2)}%`;
+            const betTypeText = state.dice.betType === 'under' ? 'Under' : 'Over';
+            diceBetTypeBtn.textContent = `Roll ${betTypeText} ${state.dice.target.toFixed(2)}`;
+            diceBetTypeBtn.classList.toggle('bg-green-600', state.dice.betType === 'under');
+            diceBetTypeBtn.classList.toggle('bg-red-600', state.dice.betType === 'over');
+        }
+
+        function startDiceGame() {
+            const roll = parseFloat((Math.random() * 100).toFixed(2));
+            diceResultDisplay.textContent = roll;
+            let won = (state.dice.betType === 'under' && roll < state.dice.target) || (state.dice.betType === 'over' && roll > state.dice.target);
+            if (won) {
+                const winnings = state.currentBet * state.dice.multiplier;
+                handleWin(winnings);
+                gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
+                gameMessageEl.style.color = '#4ade80';
+                diceResultDisplay.style.color = '#4ade80';
+            } else {
+                gameMessageEl.textContent = `You lost.`;
+                gameMessageEl.style.color = '#ef4444';
+                diceResultDisplay.style.color = '#ef4444';
+                handleLoss();
+            }
+            resetGameRound();
+            updateUI();
+        }
+
+        // --- Blackjack Logic ---
+        function createDeck() {
+            const suits = ['♥', '♦', '♣', '♠'];
+            const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+            const deck = [];
+            for (const suit of suits) {
+                for (const rank of ranks) {
+                    deck.push({ suit, rank });
+                }
+            }
+            return deck;
+        }
+
+        function shuffleDeck(deck) {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function getCardValue(card) {
+            if (['J', 'Q', 'K'].includes(card.rank)) return 10;
+            if (card.rank === 'A') return 11;
+            return parseInt(card.rank);
+        }
+
+        function calculateHandValue(hand) {
+            let value = 0;
+            let aceCount = 0;
+            for (const card of hand) {
+                value += getCardValue(card);
+                if (card.rank === 'A') aceCount++;
+            }
+            while (value > 21 && aceCount > 0) {
+                value -= 10;
+                aceCount--;
+            }
+            return value;
+        }
+
+        function startBlackjackGame() {
+            state.blackjack.deck = createDeck();
+            shuffleDeck(state.blackjack.deck);
+            state.blackjack.playerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
+            state.blackjack.dealerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
+            state.blackjack.status = 'playerTurn';
+            
+            renderBlackjackHands();
+
+            const playerScore = calculateHandValue(state.blackjack.playerHand);
+            const dealerScore = calculateHandValue(state.blackjack.dealerHand);
+
+            if (playerScore === 21) {
+                const winnings = state.currentBet * 2.5; // Blackjack pays 3:2
+                handleWin(winnings);
+                gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
+                setTimeout(resetGameRound, 1500);
+            }
+            updateUI();
+        }
+
+        function renderBlackjackHands(revealDealerCard = false) {
+            playerHandEl.innerHTML = '';
+            dealerHandEl.innerHTML = '';
+
+            state.blackjack.playerHand.forEach(card => {
+                playerHandEl.innerHTML += `<div class="card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}">${card.rank}${card.suit}</div>`;
+            });
+
+            state.blackjack.dealerHand.forEach((card, index) => {
+                if (index === 0 || revealDealerCard) {
+                    dealerHandEl.innerHTML += `<div class="card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}">${card.rank}${card.suit}</div>`;
+                } else {
+                    dealerHandEl.innerHTML += `<div class="card hidden"></div>`;
+                }
+            });
+
+            state.blackjack.playerScore = calculateHandValue(state.blackjack.playerHand);
+            playerScoreEl.textContent = state.blackjack.playerScore;
+
+            if (revealDealerCard) {
+                state.blackjack.dealerScore = calculateHandValue(state.blackjack.dealerHand);
+                dealerScoreEl.textContent = state.blackjack.dealerScore;
+            } else {
+                dealerScoreEl.textContent = getCardValue(state.blackjack.dealerHand[0]);
+            }
+        }
+        
+        function blackjackHit() {
+            if (state.blackjack.status !== 'playerTurn') return;
+            state.blackjack.playerHand.push(state.blackjack.deck.pop());
+            renderBlackjackHands();
+            if (state.blackjack.playerScore > 21) {
+                gameMessageEl.textContent = 'Bust! You lose.';
+                handleLoss();
+                setTimeout(resetGameRound, 1500);
+            }
+            updateUI();
+        }
+
+        function blackjackStand() {
+            if (state.blackjack.status !== 'playerTurn') return;
+            state.blackjack.status = 'dealerTurn';
+            renderBlackjackHands(true);
+            
+            const dealerTurn = setInterval(() => {
+                if (state.blackjack.dealerScore < 17) {
+                    state.blackjack.dealerHand.push(state.blackjack.deck.pop());
+                    renderBlackjackHands(true);
+                } else {
+                    clearInterval(dealerTurn);
+                    endBlackjackHand();
+                }
+            }, 1000);
+        }
+
+        function endBlackjackHand() {
+            renderBlackjackHands(true);
+            const playerScore = state.blackjack.playerScore;
+            const dealerScore = state.blackjack.dealerScore;
+
+            if (dealerScore > 21 || playerScore > dealerScore) {
+                const winnings = state.currentBet * 2;
+                handleWin(winnings);
+                gameMessageEl.textContent = `You win ${formatCurrency(winnings, false)}!`;
+            } else if (dealerScore > playerScore) {
+                gameMessageEl.textContent = 'Dealer wins.';
+                handleLoss();
+            } else {
+                gameMessageEl.textContent = 'Push.';
+                handleWin(state.currentBet); // Return bet
+            }
+            setTimeout(resetGameRound, 2000);
+            updateUI();
+        }
+
+
+        // --- UI and Stats Logic ---
+        function updateLiveStatsUI() {
+            const { overall } = state.runStats;
+            const profit = overall.won - overall.wagered;
+            const totalBets = overall.wins + overall.losses;
+            const winRate = totalBets > 0 ? (overall.wins / totalBets) * 100 : 0;
+            liveProfit.textContent = formatCurrency(profit);
+            liveProfit.style.color = profit >= 0 ? '#4ade80' : '#ef4444';
+            liveBets.textContent = totalBets;
+            liveWinRate.textContent = totalBets > 0 ? `${winRate.toFixed(2)}%` : 'N/A';
+        }
+
+        function renderStatsModal() {
+            statsTableBody.innerHTML = '';
+            const games = ['crash', 'mines', 'dice', 'blackjack', 'overall'];
+            games.forEach(gameKey => {
+                const stats = state.runStats[gameKey];
+                const profit = stats.won - stats.wagered;
+                const totalBets = stats.wins + stats.losses;
+                const winRate = totalBets > 0 ? `${((stats.wins / totalBets) * 100).toFixed(2)}%` : 'N/A';
+                const row = `<tr><td class="font-bold">${gameKey.charAt(0).toUpperCase() + gameKey.slice(1)}</td><td>${stats.wins} / ${stats.losses}</td><td>${winRate}</td><td style="color: ${profit >= 0 ? '#4ade80' : '#ef4444'}">${formatCurrency(profit)}</td><td>${formatCurrency(stats.wagered, false)}</td></tr>`;
+                statsTableBody.innerHTML += row;
+            });
+            drawStatsGraph();
+        }
+        
+        function drawStatsGraph() {
+            const { cashHistory } = state.runStats;
+            const canvas = statsGraphCanvas;
+            const ctx = statsGraphCtx;
+            const padding = 20;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (cashHistory.length < 2) return;
+            const cashValues = cashHistory.map(p => p.cash);
+            const minCash = Math.min(...cashValues);
+            const maxCash = Math.max(...cashValues);
+            const range = maxCash - minCash;
+            const y_scale = range > 0 ? (canvas.height - padding * 2) / range : 0;
+            const x_scale = (canvas.width - padding * 2) / (cashHistory.length - 1);
+            ctx.beginPath();
+            ctx.moveTo(padding, canvas.height - padding - (cashHistory[0].cash - minCash) * y_scale);
+            for (let i = 1; i < cashHistory.length; i++) {
+                ctx.lineTo(padding + i * x_scale, canvas.height - padding - (cashHistory[i].cash - minCash) * y_scale);
+            }
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function updateUI() {
+            currentCashEl.textContent = formatCurrency(state.currentCash, false);
+            firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
+            placeBetBtn.disabled = state.gameInProgress;
+            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack'].includes(state.currentGame);
+            betAmountInput.disabled = state.gameInProgress;
+            mineCountInput.disabled = state.gameInProgress;
+            diceSlider.disabled = state.gameInProgress;
+            blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn');
+            if (state.currentGame === 'crash') multiplierEl.textContent = `${state.crash.multiplier.toFixed(2)}x`;
+        }
+
+        function switchGame(gameName) {
+            if (state.gameInProgress) return;
+            state.currentGame = gameName;
+            gameTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.game === gameName));
+            gameDisplays.forEach(display => display.classList.toggle('hidden', display.id !== `${gameName}Game`));
+            minesControls.classList.toggle('hidden', gameName !== 'mines');
+            diceControls.classList.toggle('hidden', gameName !== 'dice');
+            blackjackControls.classList.toggle('hidden', true); // Always hide on switch
+            gameMessageEl.textContent = '\u00A0';
+            if (gameName === 'dice') updateDiceUI();
+            updateUI();
+        }
+
+        // --- Event Listeners ---
+        gameTabs.forEach(tab => tab.addEventListener('click', () => switchGame(tab.dataset.game)));
+        startRunBtn.addEventListener('click', initializeRun);
+        placeBetBtn.addEventListener('click', placeBet);
+        cashOutBtn.addEventListener('click', cashOut);
+        endRunBtn.addEventListener('click', () => endRun(false));
+        playAgainBtn.addEventListener('click', () => {
+            startScreen.classList.remove('hidden');
+            gameOverModal.classList.add('hidden');
+            gameOverModal.classList.remove('flex');
+        });
+        diceSlider.addEventListener('input', updateDiceUI);
+        diceBetTypeBtn.addEventListener('click', () => {
+            state.dice.betType = state.dice.betType === 'under' ? 'over' : 'under';
+            updateDiceUI();
+        });
+        viewStatsBtn.addEventListener('click', () => {
+            pauseRun();
+            renderStatsModal();
+            statsModal.classList.remove('hidden');
+            statsModal.classList.add('flex');
+        });
+        closeStatsBtn.addEventListener('click', () => {
+            resumeRun();
+            statsModal.classList.add('hidden');
+            statsModal.classList.remove('flex');
+        });
+        hitBtn.addEventListener('click', blackjackHit);
+        standBtn.addEventListener('click', blackjackStand);
+
+    </script>
+</body>
+</html>
