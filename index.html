@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -126,7 +125,6 @@
         .stats-table th {
             background-color: #334155;
         }
-        /* Blackjack Styles */
         .card {
             background-color: white;
             color: black;
@@ -149,7 +147,6 @@
             min-height: 100px;
             align-items: center;
         }
-        /* Keno Styles */
         #kenoGrid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -174,7 +171,6 @@
             background-color: #ef4444;
             opacity: 0.5;
         }
-        /* Slide Styles */
         #slideReelContainer {
             overflow: hidden;
             position: relative;
@@ -217,6 +213,54 @@
         .risk-btn.active {
             background-color: #4f46e5;
         }
+        /* New Styles for Auto-Bet and History */
+        .bet-mode-tab {
+            background-color: #334155;
+            color: #94a3b8;
+            border: 1px solid #475569;
+            border-bottom: none;
+        }
+        .bet-mode-tab.active {
+            background-color: #1e293b;
+            color: white;
+            border-color: #334155;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: -1px;
+        }
+        .bet-controls-container {
+            border: 1px solid #334155;
+            background-color: #1e293b;
+        }
+        .live-history-bar {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 8px 4px;
+            margin-top: 12px;
+            border-top: 1px solid #334155;
+            scrollbar-width: thin;
+            scrollbar-color: #475569 #1e293b;
+        }
+        .history-item {
+            flex-shrink: 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background-color: #475569;
+            color: #e2e8f0;
+            cursor: pointer;
+            min-width: 70px;
+            text-align: center;
+        }
+        .history-item.win {
+            background-color: #10b981;
+            color: #1e293b;
+        }
+        .history-item.loss {
+            background-color: #ef4444;
+            color: #ffffff;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -256,23 +300,26 @@
 
             <!-- Game Displays -->
             <div id="crashGame" class="game-display">
-                <div class="relative flex flex-col items-center justify-center h-64 mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                <div class="relative flex flex-col items-center justify-center h-64 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
                     <canvas id="crashChart"></canvas>
                     <p id="multiplier" class="multiplier-display text-slate-200">1.00x</p>
                 </div>
+                <div id="crashHistory" class="live-history-bar"></div>
             </div>
             <div id="limboGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-64 mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                <div class="flex flex-col items-center justify-center h-64 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
                     <div id="limboResultDisplay" class="text-slate-200">--.--x</div>
                 </div>
+                <div id="limboHistory" class="live-history-bar"></div>
             </div>
             <div id="minesGame" class="game-display hidden">
-                 <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                 <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4">
                     <div class="w-full max-w-xs" id="minesGrid"></div>
                 </div>
+                <div id="minesHistory" class="live-history-bar"></div>
             </div>
             <div id="diceGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
                     <div id="diceResultDisplay" class="text-slate-500">--.--</div>
                     <div class="w-full max-w-md">
                         <input id="diceSlider" type="range" min="1" max="9999" value="5000" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
@@ -282,9 +329,10 @@
                         <div><span class="font-semibold text-slate-400">Win Chance:</span> <span id="diceWinChance" class="font-bold text-white">50.00%</span></div>
                     </div>
                 </div>
+                <div id="diceHistory" class="live-history-bar"></div>
             </div>
             <div id="blackjackGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
                     <div>
                         <h3 class="text-center font-bold">Dealer's Hand (<span id="dealerScore">0</span>)</h3>
                         <div id="dealerHand" class="hand-container"></div>
@@ -294,60 +342,119 @@
                         <div id="playerHand" class="hand-container"></div>
                     </div>
                 </div>
+                <div id="blackjackHistory" class="live-history-bar"></div>
             </div>
              <div id="kenoGame" class="game-display hidden">
-                <div class="flex flex-col md:flex-row items-start justify-center gap-4 h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                <div class="flex flex-col md:flex-row items-start justify-center gap-4 h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4">
                     <div id="kenoGrid" class="flex-grow"></div>
                     <div id="kenoPayouts" class="w-full md:w-48 text-xs bg-slate-800 p-2 rounded"></div>
                 </div>
+                <div id="kenoHistory" class="live-history-bar"></div>
             </div>
             <div id="slideGame" class="game-display hidden">
-                 <div class="flex flex-col items-center justify-center h-48 mb-6 bg-slate-900/50 rounded-lg border border-slate-700">
+                 <div class="flex flex-col items-center justify-center h-48 bg-slate-900/50 rounded-lg border border-slate-700">
                     <div id="slideReelContainer">
                         <div id="slideReel"></div>
                         <div id="slidePointer"></div>
                     </div>
                 </div>
+                <div id="slideHistory" class="live-history-bar"></div>
             </div>
             
             <p id="gameMessage" class="text-lg text-center text-slate-400 mt-2 mb-4 h-8">&nbsp;</p>
 
             <!-- Controls -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="betAmount" class="block text-sm font-medium mb-1 text-slate-400">Bet Amount</label>
-                    <input type="number" id="betAmount" value="10" class="input-field w-full p-3 rounded-md shadow-inner">
-                    <div id="limboControls" class="mt-2 hidden">
-                         <label for="limboTarget" class="block text-sm font-medium mb-1 text-slate-400">Target Multiplier</label>
-                         <input type="number" id="limboTarget" value="2.00" step="0.01" min="1.01" class="input-field w-full p-3 rounded-md shadow-inner">
-                         <div class="text-sm mt-1 text-slate-400">Win Chance: <span id="limboWinChance" class="font-bold text-white">49.50%</span></div>
-                    </div>
-                    <div id="minesControls" class="mt-2 hidden">
-                         <label for="mineCount" class="block text-sm font-medium mb-1 text-slate-400">Mines (1-24)</label>
-                         <input type="number" id="mineCount" value="5" min="1" max="24" class="input-field w-full p-3 rounded-md shadow-inner">
-                    </div>
-                    <div id="diceControls" class="mt-2 hidden">
-                        <button id="diceBetTypeBtn" class="w-full btn bg-green-600 text-white font-bold py-2 rounded-md">Roll Under 50.00</button>
-                    </div>
-                    <div id="blackjackControls" class="mt-2 hidden flex space-x-2">
-                        <button id="hitBtn" class="w-full btn bg-yellow-500 text-slate-900 font-bold py-2 rounded-md">Hit</button>
-                        <button id="standBtn" class="w-full btn bg-blue-500 text-white font-bold py-2 rounded-md">Stand</button>
-                    </div>
-                    <div id="slideControls" class="mt-2 hidden">
-                        <label class="block text-sm font-medium mb-1 text-slate-400">Risk Level</label>
-                        <div class="flex space-x-2">
-                            <button class="risk-btn btn flex-1 active" data-risk="easy">Easy</button>
-                            <button class="risk-btn btn flex-1" data-risk="medium">Medium</button>
-                            <button class="risk-btn btn flex-1" data-risk="hard">Hard</button>
-                            <button class="risk-btn btn flex-1" data-risk="expert">Expert</button>
+            <div class="flex space-x-2 -mb-px">
+                <button id="manualBetTab" class="bet-mode-tab active px-4 py-2 rounded-t-md font-semibold">Manual</button>
+                <button id="autoBetTab" class="bet-mode-tab px-4 py-2 rounded-t-md font-semibold">Auto</button>
+            </div>
+            <div class="bet-controls-container p-4 rounded-b-md rounded-tr-md">
+                <!-- Manual Bet Controls -->
+                <div id="manualBetControls">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="betAmount" class="block text-sm font-medium mb-1 text-slate-400">Bet Amount</label>
+                            <input type="number" id="betAmount" value="10" class="input-field w-full p-3 rounded-md shadow-inner">
+                            <div id="limboControls" class="mt-2 hidden">
+                                 <label for="limboTarget" class="block text-sm font-medium mb-1 text-slate-400">Target Multiplier</label>
+                                 <input type="number" id="limboTarget" value="2.00" step="0.01" min="1.01" class="input-field w-full p-3 rounded-md shadow-inner">
+                                 <div class="text-sm mt-1 text-slate-400">Win Chance: <span id="limboWinChance" class="font-bold text-white">49.50%</span></div>
+                            </div>
+                            <div id="minesControls" class="mt-2 hidden">
+                                 <label for="mineCount" class="block text-sm font-medium mb-1 text-slate-400">Mines (1-24)</label>
+                                 <input type="number" id="mineCount" value="5" min="1" max="24" class="input-field w-full p-3 rounded-md shadow-inner">
+                            </div>
+                            <div id="diceControls" class="mt-2 hidden">
+                                <button id="diceBetTypeBtn" class="w-full btn bg-green-600 text-white font-bold py-2 rounded-md">Roll Under 50.00</button>
+                            </div>
+                            <div id="blackjackControls" class="mt-2 hidden flex space-x-2">
+                                <button id="hitBtn" class="w-full btn bg-yellow-500 text-slate-900 font-bold py-2 rounded-md">Hit</button>
+                                <button id="standBtn" class="w-full btn bg-blue-500 text-white font-bold py-2 rounded-md">Stand</button>
+                            </div>
+                            <div id="slideControls" class="mt-2 hidden">
+                                <label class="block text-sm font-medium mb-1 text-slate-400">Risk Level</label>
+                                <div class="flex space-x-2">
+                                    <button class="risk-btn btn flex-1 active" data-risk="easy">Easy</button>
+                                    <button class="risk-btn btn flex-1" data-risk="medium">Medium</button>
+                                    <button class="risk-btn btn flex-1" data-risk="hard">Hard</button>
+                                    <button class="risk-btn btn flex-1" data-risk="expert">Expert</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col space-y-2">
+                             <button id="placeBetBtn" class="w-full btn btn-primary font-bold py-3 rounded-md">Place Bet</button>
+                             <button id="cashOutBtn" class="w-full btn btn-secondary font-bold py-3 rounded-md" disabled>Cash Out</button>
                         </div>
                     </div>
                 </div>
-                <div class="flex flex-col space-y-2">
-                     <button id="placeBetBtn" class="w-full btn btn-primary font-bold py-3 rounded-md">Place Bet</button>
-                     <button id="cashOutBtn" class="w-full btn btn-secondary font-bold py-3 rounded-md" disabled>Cash Out</button>
+
+                <!-- Auto Bet Controls -->
+                <div id="autoBetControls" class="hidden">
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Column 1: Core Settings -->
+                        <div class="space-y-3">
+                             <div>
+                                <label for="autoBetAmount" class="block text-xs font-medium mb-1 text-slate-400">Base Bet</label>
+                                <input type="number" id="autoBetAmount" value="1.00" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                             <div>
+                                <label for="autoNumBets" class="block text-xs font-medium mb-1 text-slate-400">Number of Bets (0=inf)</label>
+                                <input type="number" id="autoNumBets" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                        </div>
+                        <!-- Column 2: Win/Loss Actions -->
+                        <div class="space-y-3">
+                            <div>
+                                <label for="autoOnWin" class="block text-xs font-medium mb-1 text-slate-400">On Win: Increase By (%)</label>
+                                <div class="flex items-center">
+                                    <input type="number" id="autoOnWinValue" value="0" class="input-field w-full p-2 rounded-l-md shadow-inner text-sm">
+                                    <button id="autoResetOnWin" class="btn bg-slate-600 px-3 py-2 text-xs rounded-r-md">Reset</button>
+                                </div>
+                            </div>
+                             <div>
+                                <label for="autoOnLoss" class="block text-xs font-medium mb-1 text-slate-400">On Loss: Increase By (%)</label>
+                                 <div class="flex items-center">
+                                    <input type="number" id="autoOnLossValue" value="100" class="input-field w-full p-2 rounded-l-md shadow-inner text-sm">
+                                    <button id="autoResetOnLoss" class="btn bg-slate-600 px-3 py-2 text-xs rounded-r-md">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                         <!-- Column 3: Limits & Action -->
+                        <div class="space-y-3 flex flex-col">
+                             <div>
+                                <label for="autoStopOnProfit" class="block text-xs font-medium mb-1 text-slate-400">Stop on Profit ($)</label>
+                                <input type="number" id="autoStopOnProfit" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                             <div>
+                                <label for="autoStopOnLoss" class="block text-xs font-medium mb-1 text-slate-400">Stop on Loss ($)</label>
+                                <input type="number" id="autoStopOnLoss" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                            <button id="startAutoBetBtn" class="w-full btn btn-primary font-bold py-2 rounded-md mt-auto">Start Auto Bet</button>
+                        </div>
+                     </div>
                 </div>
             </div>
+
              <div class="mt-6 flex justify-center space-x-4">
                 <button id="viewStatsBtn" class="btn bg-indigo-600 hover:bg-indigo-700 font-bold py-3 px-8 rounded-md">View Stats</button>
                 <button id="endRunBtn" class="btn btn-danger font-bold py-3 px-8 rounded-md">End Run</button>
@@ -479,6 +586,22 @@
         const limboTargetInput = document.getElementById('limboTarget');
         const limboWinChanceEl = document.getElementById('limboWinChance');
         const limboResultDisplay = document.getElementById('limboResultDisplay');
+        
+        // New Auto Bet DOM Elements
+        const manualBetTab = document.getElementById('manualBetTab');
+        const autoBetTab = document.getElementById('autoBetTab');
+        const manualBetControls = document.getElementById('manualBetControls');
+        const autoBetControls = document.getElementById('autoBetControls');
+        const startAutoBetBtn = document.getElementById('startAutoBetBtn');
+        const autoBetAmountInput = document.getElementById('autoBetAmount');
+        const autoNumBetsInput = document.getElementById('autoNumBets');
+        const autoOnWinValueInput = document.getElementById('autoOnWinValue');
+        const autoResetOnWinBtn = document.getElementById('autoResetOnWin');
+        const autoOnLossValueInput = document.getElementById('autoOnLossValue');
+        const autoResetOnLossBtn = document.getElementById('autoResetOnLoss');
+        const autoStopOnProfitInput = document.getElementById('autoStopOnProfit');
+        const autoStopOnLossInput = document.getElementById('autoStopOnLoss');
+
 
         // --- Game State ---
         let state = {};
@@ -549,6 +672,24 @@
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
                     slide: createEmptyStats(),
+                },
+                history: {
+                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [],
+                },
+                autoBet: {
+                    isActive: false,
+                    baseBet: 1.00,
+                    currentBet: 1.00,
+                    numBets: 0,
+                    betsMade: 0,
+                    onWinIncrease: 0,
+                    onLossIncrease: 100,
+                    resetOnWin: true,
+                    resetOnLoss: false,
+                    stopOnProfit: 0,
+                    stopOnLoss: 0,
+                    sessionStartCash: 0,
+                    sessionProfit: 0,
                 }
             };
             startScreen.classList.add('hidden');
@@ -615,25 +756,34 @@
 
         function placeBet() {
             if (state.gameInProgress) return;
-            let betAmount = parseFloat(betAmountInput.value);
+            let betAmount = state.autoBet.isActive ? state.autoBet.currentBet : parseFloat(betAmountInput.value);
+
             if (betAmount > state.currentCash) {
                 betAmount = state.currentCash;
                 betAmountInput.value = betAmount.toFixed(2);
+                 if (state.autoBet.isActive) {
+                    gameMessageEl.textContent = "Not enough cash for auto bet. Stopping.";
+                    stopAutoBet();
+                    return;
+                }
             }
             if (isNaN(betAmount) || betAmount <= 0) {
                 gameMessageEl.textContent = "Invalid bet amount.";
                 gameMessageEl.style.color = '#ef4444';
+                if (state.autoBet.isActive) stopAutoBet();
                 return;
             }
+
             state.currentBet = betAmount;
-            state.currentRoundBet = betAmount; // lock the bet for this round to avoid race conditions
+            state.currentRoundBet = betAmount; // lock the bet for this round
             state.currentCash -= betAmount;
             state.gameInProgress = true;
             gameMessageEl.textContent = `Bet of ${formatCurrency(betAmount, false)} placed.`;
             gameMessageEl.style.color = '#e2e8f0';
-            // record wagered against the locked round bet
+            
             state.runStats.overall.wagered += state.currentRoundBet;
             state.runStats[state.currentGame].wagered += state.currentRoundBet;
+            
             if (state.currentGame === 'crash') startCrashGame();
             if (state.currentGame === 'limbo') startLimboGame();
             if (state.currentGame === 'mines') startMinesGame();
@@ -641,28 +791,34 @@
             if (state.currentGame === 'blackjack') startBlackjackGame();
             if (state.currentGame === 'keno') startKenoGame();
             if (state.currentGame === 'slide') startSlideGame();
+            
             updateUI();
         }
 
         function cashOut() {
             if (!state.gameInProgress) return;
             let winnings = 0;
+            let roundBet = 0;
+
             if (state.currentGame === 'crash') {
-                const roundBet = state.crash.roundBet || state.currentRoundBet;
+                roundBet = state.crash.roundBet || state.currentRoundBet;
                 winnings = roundBet * state.crash.multiplier;
                 gameMessageEl.textContent = `Cashed out for ${formatCurrency(winnings, false)}!`;
             } else if (state.currentGame === 'mines') {
-                const roundBet = state.mines.roundBet || state.currentRoundBet;
+                roundBet = state.mines.roundBet || state.currentRoundBet;
                 winnings = roundBet * state.mines.payoutMultiplier;
                 gameMessageEl.textContent = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
             }
-            handleWin(winnings);
+            handleWin(winnings, roundBet);
             gameMessageEl.style.color = '#4ade80';
             resetGameRound();
             updateUI();
         }
 
-        function handleWin(winnings) {
+        function handleWin(winnings, betAmount) {
+            const profit = winnings - betAmount;
+            addResultToHistory(state.currentGame, { profit });
+
             const oldMaxCash = state.maxCashReached;
             state.currentCash += winnings;
             if (state.currentCash > state.maxCashReached) {
@@ -675,9 +831,16 @@
             state.runStats[state.currentGame].won += winnings;
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
             updateLiveStatsUI();
+            
+            if (state.autoBet.isActive) {
+                runNextAutoBet(true);
+            }
         }
 
-        function handleLoss() {
+        function handleLoss(betAmount) {
+            const profit = -betAmount;
+            addResultToHistory(state.currentGame, { profit });
+
             if (state.currentGame === 'crash') {
                 gameMessageEl.textContent = `Crashed at ${state.crash.crashPoint.toFixed(2)}x!`;
                 multiplierEl.classList.add('text-red-500');
@@ -691,7 +854,15 @@
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
             updateLiveStatsUI();
             gameMessageEl.style.color = '#ef4444';
-            resetGameRound();
+
+            if (!['crash', 'mines'].includes(state.currentGame)) { // These games reset elsewhere
+                 resetGameRound();
+            }
+
+            if (state.autoBet.isActive) {
+                runNextAutoBet(false);
+            }
+            
             if (state.currentCash < state.firewallValue) setTimeout(() => endRun(true), 1000);
             updateUI();
         }
@@ -705,13 +876,13 @@
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
             state.blackjack.status = 'betting';
-            // clear per-game locked round bets
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
         }
 
         function endRun(wasBust = false) {
+            if(state.autoBet.isActive) stopAutoBet();
             state.runActive = false;
             clearInterval(runTimerInterval);
             clearTimeout(crashLoopInterval);
@@ -730,8 +901,8 @@
         // --- Game Specific Logic ---
         function createGradient(ctx, color) {
             const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
-            gradient.addColorStop(0, `${color}50`); // ~30% opacity
-            gradient.addColorStop(1, `${color}00`); // 0% opacity
+            gradient.addColorStop(0, `${color}50`);
+            gradient.addColorStop(1, `${color}00`);
             return gradient;
         }
 
@@ -759,48 +930,30 @@
                     maintainAspectRatio: false,
                     scales: {
                         x: { 
-                            grid: {
-                                display: false,
-                                drawBorder: false,
-                            },
+                            grid: { display: false, drawBorder: false },
                             ticks: {
                                 color: '#94a3b8',
                                 font: { size: 10 },
                                 callback: function(value, index, values) {
                                     const label = this.getLabelForValue(value);
-                                    // Show label every second
-                                    if (parseFloat(label) % 1 === 0) {
-                                        return label + 's';
-                                    }
+                                    if (parseFloat(label) % 1 === 0) return label + 's';
                                     return '';
                                 },
-                                maxRotation: 0,
-                                minRotation: 0,
-                                autoSkip: false
+                                maxRotation: 0, minRotation: 0, autoSkip: false
                             }
                         },
                         y: { 
                             beginAtZero: true,
-                            grid: {
-                                color: 'rgba(51, 65, 85, 0.5)',
-                                drawBorder: false,
-                            },
+                            grid: { color: 'rgba(51, 65, 85, 0.5)', drawBorder: false, },
                             ticks: {
                                 color: '#94a3b8',
                                 font: { size: 10 },
-                                callback: function(value) {
-                                    return value.toFixed(1) + 'x';
-                                }
+                                callback: function(value) { return value.toFixed(1) + 'x'; }
                             }
                         }
                     },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    },
-                    animation: {
-                        duration: 0
-                    }
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    animation: { duration: 0 }
                 }
             });
         }
@@ -808,13 +961,11 @@
         function startCrashGame() {
             state.crash.multiplier = 1.00;
             state.crash.startTime = Date.now();
-            // lock crash round bet locally on the crash state so async cashouts use the correct amount
             state.crash.roundBet = state.currentRoundBet;
             const r = Math.random();
             state.crash.crashPoint = Math.max(1.01, 1 / (1 - r));
             gameMessageEl.textContent = "Multiplier increasing...";
 
-            // Reset Chart
             crashChart.data.labels = [0];
             crashChart.data.datasets[0].data = [1];
             crashChart.data.datasets[0].borderColor = '#e2e8f0';
@@ -823,42 +974,32 @@
             crashChart.update();
 
             const runGameLoop = () => {
-                if (!state.gameInProgress) {
-                    return;
-                }
+                if (!state.gameInProgress) return;
                 
                 const elapsedTime = (Date.now() - state.crash.startTime) / 1000;
                 state.crash.multiplier = Math.pow(1.07, elapsedTime);
 
-                // Update Chart Data
                 crashChart.data.labels.push(elapsedTime.toFixed(1));
                 crashChart.data.datasets[0].data.push(state.crash.multiplier);
                 
-                // Dynamic Color Change
-                let color = '#e2e8f0'; // slate-200
-                if (state.crash.multiplier >= 10) {
-                    color = '#ef4444'; // red-500
-                } else if (state.crash.multiplier >= 5) {
-                    color = '#f97316'; // orange-500
-                } else if (state.crash.multiplier >= 2) {
-                    color = '#eab308'; // yellow-500
-                }
+                let color = '#e2e8f0';
+                if (state.crash.multiplier >= 10) color = '#ef4444';
+                else if (state.crash.multiplier >= 5) color = '#f97316';
+                else if (state.crash.multiplier >= 2) color = '#eab308';
+                
                 crashChart.data.datasets[0].borderColor = color;
                 crashChart.data.datasets[0].backgroundColor = createGradient(crashChart.ctx, color);
                 multiplierEl.style.color = color;
                 
-                // Dynamically adjust y-axis
-                const suggestedMax = Math.max(1.5, Math.ceil(state.crash.multiplier / 5) * 5);
-                crashChart.options.scales.y.max = suggestedMax;
-
-                crashChart.update('none'); // Update without animation for performance
+                crashChart.options.scales.y.max = Math.max(1.5, Math.ceil(state.crash.multiplier / 5) * 5);
+                crashChart.update('none');
 
                 if (state.crash.multiplier >= state.crash.crashPoint) {
-                    handleLoss();
+                    handleLoss(state.crash.roundBet);
+                    resetGameRound();
                     return;
                 }
                 
-                // Speed up the interval
                 const intervalTime = Math.max(10, 100 - (state.crash.multiplier * 1.5));
                 crashLoopInterval = setTimeout(runGameLoop, intervalTime);
                 
@@ -891,11 +1032,10 @@
             }
 
             const result = 1 / (1 - Math.random());
-            const roundBet = state.currentRoundBet; // capture bet for this limbo round
+            const roundBet = state.currentRoundBet;
             
-            // Animation
             let currentDisplay = 1.00;
-            const animationDuration = 800; // ms
+            const animationDuration = 800;
             const startTime = Date.now();
 
             const animateNumber = () => {
@@ -907,7 +1047,6 @@
                 }
                 
                 const progress = elapsedTime / animationDuration;
-                // Ease-out effect
                 const easedProgress = 1 - Math.pow(1 - progress, 3);
                 currentDisplay = 1 + (result - 1) * easedProgress;
                 limboResultDisplay.textContent = `${currentDisplay.toFixed(2)}x`;
@@ -923,8 +1062,8 @@
     function finishLimboGame(result, target, roundBet) {
             const won = result >= target;
             if (won) {
-        const winnings = roundBet * target;
-                handleWin(winnings);
+                const winnings = roundBet * target;
+                handleWin(winnings, roundBet);
                 gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
                 limboResultDisplay.classList.remove('text-slate-200');
@@ -934,12 +1073,14 @@
                 gameMessageEl.style.color = '#ef4444';
                 limboResultDisplay.classList.remove('text-slate-200');
                 limboResultDisplay.classList.add('text-red-500');
-                handleLoss();
+                handleLoss(roundBet);
             }
             
             setTimeout(() => {
-                resetGameRound();
-                updateUI();
+                if (!state.autoBet.isActive) { // only reset if not auto betting
+                    resetGameRound();
+                    updateUI();
+                }
             }, 1500);
         }
 
@@ -955,7 +1096,6 @@
             state.mines.mineCount = mineCount;
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
-            // lock mines round bet so cashouts use the correct value even if user acts fast
             state.mines.roundBet = state.currentRoundBet;
             generateMinesGrid();
             renderMinesGrid();
@@ -993,7 +1133,8 @@
             if (state.mines.grid[index] === 'mine') {
                 tile.classList.add('mine');
                 tile.innerHTML = BOMB_SVG;
-                handleLoss();
+                handleLoss(state.mines.roundBet);
+                resetGameRound();
             } else {
                 tile.classList.add('gem');
                 tile.innerHTML = '💎';
@@ -1001,7 +1142,6 @@
                 const totalTiles = state.mines.rows * state.mines.cols;
                 const totalGems = totalTiles - state.mines.mineCount;
                 
-                // Compute base payout multiplier
                 let baseMultiplier;
                 if (totalGems - state.mines.gemsFound <= 0) {
                     baseMultiplier = 25;
@@ -1009,8 +1149,6 @@
                     baseMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
                 }
 
-                // If player chose fewer than 5 mines, reduce payouts substantially
-                // to discourage low-mine easy bets. Apply a 75% penalty (keep 25%).
                 if (state.mines.mineCount < 5) {
                     baseMultiplier = Math.max(0.1, baseMultiplier * 0.25);
                 }
@@ -1023,13 +1161,13 @@
         }
         
         function revealAllMines() {
-           const tiles = minesGridEl.children;
-           state.mines.grid.forEach((type, index) => {
-               if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
-                   tiles[index].classList.add('revealed', 'mine');
-                   tiles[index].innerHTML = BOMB_SVG;
-               }
-           });
+          const tiles = minesGridEl.children;
+          state.mines.grid.forEach((type, index) => {
+              if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
+                  tiles[index].classList.add('revealed', 'mine');
+                  tiles[index].innerHTML = BOMB_SVG;
+              }
+          });
         }
 
         function updateDiceUI() {
@@ -1053,9 +1191,10 @@
             const roll = parseFloat((Math.random() * 100).toFixed(2));
             diceResultDisplay.textContent = roll;
             let won = (state.dice.betType === 'under' && roll < state.dice.target) || (state.dice.betType === 'over' && roll > state.dice.target);
+            
             if (won) {
                 const winnings = state.currentRoundBet * state.dice.multiplier;
-                handleWin(winnings);
+                handleWin(winnings, state.currentRoundBet);
                 gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
                 diceResultDisplay.style.color = '#4ade80';
@@ -1063,9 +1202,9 @@
                 gameMessageEl.textContent = `You lost.`;
                 gameMessageEl.style.color = '#ef4444';
                 diceResultDisplay.style.color = '#ef4444';
-                handleLoss();
+                handleLoss(state.currentRoundBet);
             }
-            resetGameRound();
+            if(!state.autoBet.isActive) resetGameRound();
             updateUI();
         }
 
@@ -1115,12 +1254,11 @@
             state.blackjack.dealerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
             state.blackjack.status = 'playerTurn';
             renderBlackjackHands();
-            // lock blackjack round bet on the blackjack state for async resolution
             state.blackjack.roundBet = state.currentRoundBet;
             const playerScore = calculateHandValue(state.blackjack.playerHand);
             if (playerScore === 21) {
                 const winnings = state.blackjack.roundBet * 2.5; // 3:2 payout
-                handleWin(winnings);
+                handleWin(winnings, state.blackjack.roundBet);
                 gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
                 setTimeout(resetGameRound, 1500);
             }
@@ -1156,7 +1294,7 @@
             renderBlackjackHands();
             if (state.blackjack.playerScore > 21) {
                 gameMessageEl.textContent = 'Bust! You lose.';
-                handleLoss();
+                handleLoss(state.blackjack.roundBet);
                 setTimeout(resetGameRound, 1500);
             }
             updateUI();
@@ -1181,16 +1319,17 @@
             renderBlackjackHands(true);
             const playerScore = state.blackjack.playerScore;
             const dealerScore = state.blackjack.dealerScore;
+            const roundBet = state.blackjack.roundBet;
             if (dealerScore > 21 || playerScore > dealerScore) {
-                const winnings = state.blackjack.roundBet * 2;
-                handleWin(winnings);
+                const winnings = roundBet * 2;
+                handleWin(winnings, roundBet);
                 gameMessageEl.textContent = `You win ${formatCurrency(winnings, false)}!`;
             } else if (dealerScore > playerScore) {
                 gameMessageEl.textContent = 'Dealer wins.';
-                handleLoss();
+                handleLoss(roundBet);
             } else {
                 gameMessageEl.textContent = 'Push.';
-                handleWin(state.blackjack.roundBet); // Return original bet
+                handleWin(roundBet, roundBet); // Return original bet, profit is 0
             }
             setTimeout(resetGameRound, 2000);
             updateUI();
@@ -1257,6 +1396,7 @@
                 gameMessageEl.style.color = '#ef4444';
                 state.gameInProgress = false;
                 state.currentCash += state.currentRoundBet;
+                if(state.autoBet.isActive) stopAutoBet();
                 return;
             }
 
@@ -1272,6 +1412,7 @@
             const numSelected = state.keno.selectedNumbers.length;
             const payoutsForSelection = KENO_PAYOUTS[numSelected] || {};
             const payoutMultiplier = payoutsForSelection[numHits] || 0;
+            const roundBet = state.currentRoundBet;
 
             let i = 0;
             const drawInterval = setInterval(() => {
@@ -1286,18 +1427,20 @@
                 if (i >= drawnNumbers.length) {
                     clearInterval(drawInterval);
                     if (payoutMultiplier > 0) {
-                        const winnings = state.currentRoundBet * payoutMultiplier;
-                        handleWin(winnings);
+                        const winnings = roundBet * payoutMultiplier;
+                        handleWin(winnings, roundBet);
                         gameMessageEl.textContent = `You hit ${numHits} numbers and won ${formatCurrency(winnings, false)}!`;
                         gameMessageEl.style.color = '#4ade80';
                     } else {
                         gameMessageEl.textContent = `You hit ${numHits} numbers and lost.`;
                         gameMessageEl.style.color = '#ef4444';
-                        handleLoss();
+                        handleLoss(roundBet);
                     }
                     setTimeout(() => {
-                        resetGameRound();
-                        updateUI();
+                         if (!state.autoBet.isActive) {
+                             resetGameRound();
+                             updateUI();
+                         }
                     }, 2000);
                 }
             }, 100);
@@ -1309,7 +1452,6 @@
             const possibleOutcomes = SLIDE_MULTIPLIERS[risk];
             const totalWeight = possibleOutcomes.reduce((sum, o) => sum + o.w, 0);
 
-            // Generate a reel of 50 items
             const reelItems = [];
             for (let i = 0; i < 50; i++) {
                 let random = Math.random() * totalWeight;
@@ -1322,10 +1464,8 @@
                 }
             }
             
-            // Pick a winning item (the one in the middle of the reel)
             const winningItem = reelItems[25];
             
-            // Render the reel
             slideReel.innerHTML = '';
             reelItems.forEach(item => {
                 const caseEl = document.createElement('div');
@@ -1334,15 +1474,12 @@
                 slideReel.appendChild(caseEl);
             });
 
-            // Animate the reel
             const containerWidth = slideReelContainer.offsetWidth;
             const itemWidth = 110; // 100px width + 10px margin
             const targetPos = (containerWidth / 2) - (itemWidth / 2) - (25 * itemWidth);
             
-            // Add some randomness to the final position
             const randomOffset = (Math.random() - 0.5) * (itemWidth * 0.8);
             
-            // Reset position without transition
             slideReel.style.transition = 'none';
             slideReel.style.left = '0px';
 
@@ -1351,21 +1488,23 @@
                 slideReel.style.left = `${targetPos + randomOffset}px`;
             }, 100);
 
-            // Handle result after animation
             setTimeout(() => {
                 const multiplier = winningItem.m;
+                const roundBet = state.currentRoundBet;
                 if (multiplier > 0) {
-                    const winnings = state.currentRoundBet * multiplier;
-                    handleWin(winnings);
+                    const winnings = roundBet * multiplier;
+                    handleWin(winnings, roundBet);
                     gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                     gameMessageEl.style.color = '#4ade80';
                 } else {
                     gameMessageEl.textContent = 'You lost.';
                     gameMessageEl.style.color = '#ef4444';
-                    handleLoss();
+                    handleLoss(roundBet);
                 }
-                resetGameRound();
-                updateUI();
+                if (!state.autoBet.isActive) {
+                    resetGameRound();
+                    updateUI();
+                }
             }, 4500);
         }
 
@@ -1424,20 +1563,27 @@
             if (!state.runActive) return;
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
             firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
-            placeBetBtn.disabled = state.gameInProgress;
-            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines'].includes(state.currentGame);
-            betAmountInput.disabled = state.gameInProgress;
-            mineCountInput.disabled = state.gameInProgress;
-            diceSlider.disabled = state.gameInProgress;
-            limboTargetInput.disabled = state.gameInProgress;
-            blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn');
+            
+            const isAutoBetting = state.autoBet.isActive;
+            const controlsDisabled = state.gameInProgress || isAutoBetting;
+
+            placeBetBtn.disabled = controlsDisabled;
+            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines'].includes(state.currentGame) || isAutoBetting;
+            betAmountInput.disabled = controlsDisabled;
+            mineCountInput.disabled = controlsDisabled;
+            diceSlider.disabled = controlsDisabled;
+            limboTargetInput.disabled = controlsDisabled;
+            document.querySelectorAll('#autoBetControls input').forEach(el => el.disabled = isAutoBetting);
+            
+            blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn' || controlsDisabled);
+            
             if (state.currentGame === 'crash') {
                 multiplierEl.textContent = `${state.crash.multiplier.toFixed(2)}x`;
             }
         }
 
         function switchGame(gameName) {
-            if (state.gameInProgress) return;
+            if (state.gameInProgress || state.autoBet.isActive) return;
             state.currentGame = gameName;
             gameTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.game === gameName));
             gameDisplays.forEach(display => display.classList.toggle('hidden', display.id !== `${gameName}Game`));
@@ -1455,7 +1601,37 @@
                 renderKenoBoard();
                 updateKenoPayouts();
             }
+            renderHistoryBar();
             updateUI();
+        }
+        
+        // --- Live History Logic ---
+        function addResultToHistory(game, result) {
+            if (!state.history[game]) state.history[game] = [];
+            state.history[game].unshift(result); // Add to the beginning
+            if (state.history[game].length > 20) {
+                state.history[game].pop(); // Keep it to 20 items
+            }
+            renderHistoryBar();
+        }
+
+        function renderHistoryBar() {
+            const game = state.currentGame;
+            const history = state.history[game];
+            const container = document.getElementById(`${game}History`);
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (!history || history.length === 0) return;
+
+            history.forEach(result => {
+                const item = document.createElement('div');
+                item.classList.add('history-item');
+                item.classList.toggle('win', result.profit >= 0);
+                item.classList.toggle('loss', result.profit < 0);
+                item.textContent = formatCurrency(result.profit, true);
+                container.appendChild(item);
+            });
         }
 
         // --- Lifetime Stats Logic ---
@@ -1468,16 +1644,8 @@
                     if (!lifetimeStats[gameKey]) lifetimeStats[gameKey] = createEmptyStats();
                 });
             } else {
-                lifetimeStats = {
-                    overall: createEmptyStats(),
-                    crash: createEmptyStats(),
-                    limbo: createEmptyStats(),
-                    mines: createEmptyStats(),
-                    dice: createEmptyStats(),
-                    blackjack: createEmptyStats(),
-                    keno: createEmptyStats(),
-                    slide: createEmptyStats(),
-                };
+                lifetimeStats = {};
+                defaultGames.forEach(gameKey => lifetimeStats[gameKey] = createEmptyStats());
             }
         }
 
@@ -1512,6 +1680,83 @@
                 const row = `<tr><td class="font-bold">${gameKey.charAt(0).toUpperCase() + gameKey.slice(1)}</td><td>${stats.wins} / ${stats.losses}</td><td>${winRate}</td><td style="color: ${profit >= 0 ? '#4ade80' : '#ef4444'}">${formatCurrency(profit)}</td><td>${formatCurrency(stats.wagered, false)}</td></tr>`;
                 lifetimeStatsTableBody.innerHTML += row;
             });
+        }
+        
+        // --- Auto Bet Logic ---
+        function startAutoBet() {
+            const auto = state.autoBet;
+            auto.isActive = true;
+            
+            auto.baseBet = parseFloat(autoBetAmountInput.value) || 1.00;
+            auto.currentBet = auto.baseBet;
+            auto.numBets = parseInt(autoNumBetsInput.value) || 0;
+            auto.onWinIncrease = parseFloat(autoOnWinValueInput.value) || 0;
+            auto.onLossIncrease = parseFloat(autoOnLossValueInput.value) || 0;
+            auto.resetOnWin = autoOnWinValueInput.value === '';
+            auto.resetOnLoss = autoOnLossValueInput.value === '';
+            auto.stopOnProfit = parseFloat(autoStopOnProfitInput.value) || 0;
+            auto.stopOnLoss = parseFloat(autoStopOnLossInput.value) || 0;
+            
+            auto.betsMade = 0;
+            auto.sessionStartCash = state.currentCash;
+            auto.sessionProfit = 0;
+
+            startAutoBetBtn.textContent = "Stop Auto Bet";
+            startAutoBetBtn.classList.replace('btn-primary', 'btn-danger');
+            gameMessageEl.textContent = 'Auto-betting started...';
+            updateUI();
+            
+            placeBet();
+        }
+        
+        function stopAutoBet() {
+            state.autoBet.isActive = false;
+            startAutoBetBtn.textContent = "Start Auto Bet";
+            startAutoBetBtn.classList.replace('btn-danger', 'btn-primary');
+            gameMessageEl.textContent = 'Auto-betting stopped.';
+            updateUI();
+        }
+
+        function runNextAutoBet(wasWin) {
+            const auto = state.autoBet;
+            
+            // 1. Update bet amount for next round
+            if (wasWin) {
+                if (auto.resetOnWin) auto.currentBet = auto.baseBet;
+                else auto.currentBet *= (1 + auto.onWinIncrease / 100);
+            } else { // wasLoss
+                if (auto.resetOnLoss) auto.currentBet = auto.baseBet;
+                else auto.currentBet *= (1 + auto.onLossIncrease / 100);
+            }
+            // ensure bet is not smaller than a cent
+            auto.currentBet = Math.max(0.01, auto.currentBet);
+
+            // 2. Update session stats
+            auto.betsMade++;
+            auto.sessionProfit = state.currentCash - auto.sessionStartCash;
+
+            // 3. Check stop conditions
+            if (!auto.isActive) return; // a game might have stopped it (e.g. keno)
+            if (auto.numBets > 0 && auto.betsMade >= auto.numBets) {
+                gameMessageEl.textContent = `Target number of bets (${auto.numBets}) reached.`;
+                stopAutoBet();
+                return;
+            }
+            if (auto.stopOnProfit > 0 && auto.sessionProfit >= auto.stopOnProfit) {
+                gameMessageEl.textContent = `Profit target of ${formatCurrency(auto.stopOnProfit, false)} reached.`;
+                stopAutoBet();
+                return;
+            }
+             if (auto.stopOnLoss > 0 && auto.sessionProfit <= -auto.stopOnLoss) {
+                gameMessageEl.textContent = `Loss limit of ${formatCurrency(auto.stopOnLoss, false)} reached.`;
+                stopAutoBet();
+                return;
+            }
+            
+            // 4. Reset round and place next bet
+            resetGameRound();
+            updateUI(); // update UI before placing next bet
+            setTimeout(placeBet, 500); // 500ms delay between bets
         }
 
         // --- Event Listeners ---
@@ -1563,6 +1808,31 @@
                 btn.classList.add('active');
             });
         });
+        
+        // Auto-Bet Listeners
+        manualBetTab.addEventListener('click', () => {
+            if(state.autoBet.isActive) return;
+            manualBetTab.classList.add('active');
+            autoBetTab.classList.remove('active');
+            manualBetControls.classList.remove('hidden');
+            autoBetControls.classList.add('hidden');
+        });
+        
+        autoBetTab.addEventListener('click', () => {
+            if(state.autoBet.isActive) return;
+            autoBetTab.classList.add('active');
+            manualBetTab.classList.remove('active');
+            autoBetControls.classList.remove('hidden');
+            manualBetControls.classList.add('hidden');
+        });
+
+        startAutoBetBtn.addEventListener('click', () => {
+            if (state.autoBet.isActive) stopAutoBet();
+            else startAutoBet();
+        });
+        
+        autoResetOnWin.addEventListener('click', () => autoOnWinValueInput.value = '' );
+        autoResetOnLoss.addEventListener('click', () => autoOnLossValueInput.value = '' );
 
         // Initial Load
         loadLifetimeStats();
