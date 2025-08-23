@@ -267,7 +267,7 @@
 
     <div class="w-full max-w-4xl mx-auto">
     <h1 class="text-4xl font-bold text-center mb-2 text-slate-200">Try Again Gaming</h1>
-    <p class="text-center text-slate-400 mb-6">The Only Online Casino That\'s 100% Free Forever</p>
+    <p class="text-center text-slate-400 mb-6">The Only Online Casino That's 100% Free Forever</p>
 
         <!-- Stats Display -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
@@ -484,11 +484,20 @@
             </div>
         </div>
         
-        <div id="startScreen" class="text-center p-6 space-x-4">
-             <div class="mb-4">
-                 <input id="usernameInput" placeholder="Enter username" class="input-field p-3 rounded-md w-64" />
-                 <button id="loginBtn" class="btn btn-secondary font-bold py-2 px-4 rounded-md ml-2">Login / Create</button>
-             </div>
+        <!-- Login Page (shown first) -->
+        <div id="loginPage" class="text-center p-6">
+            <h2 class="text-2xl font-bold mb-3">Welcome to Try Again Gaming</h2>
+            <div class="mb-4">
+                <input id="loginUsernameInput" placeholder="Enter username" class="input-field p-3 rounded-md w-64" />
+            </div>
+            <div class="space-x-2">
+                <button id="loginExistingBtn" class="btn btn-secondary font-bold py-2 px-4 rounded-md">Login</button>
+                <button id="registerBtn" class="btn btn-primary font-bold py-2 px-4 rounded-md">Register New (will overwrite)</button>
+            </div>
+            <p class="text-sm text-slate-400 mt-3">Tip: Registering with an existing username will reset that account.</p>
+        </div>
+
+        <div id="startScreen" class="text-center p-6 space-x-4 hidden">
              <div>
                  <button id="startRunBtn" class="btn btn-primary font-bold py-4 px-10 rounded-lg text-xl">Start New Run</button>
                  <button id="lifetimeStatsBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-4 px-10 rounded-lg text-xl">Lifetime Stats</button>
@@ -1714,27 +1723,60 @@
             setTimeout(() => gameMessageEl.textContent = '\u00A0', 2000);
         }
 
-        // Login / create
-        const usernameInput = document.getElementById('usernameInput');
-        const loginBtn = document.getElementById('loginBtn');
+        // Login page elements
+        const loginPage = document.getElementById('loginPage');
+        const loginUsernameInput = document.getElementById('loginUsernameInput');
+        const loginExistingBtn = document.getElementById('loginExistingBtn');
+        const registerBtn = document.getElementById('registerBtn');
 
-        loginBtn.addEventListener('click', () => {
-            const name = (usernameInput.value || '').trim();
+        function showStartScreenAfterLogin() {
+            // hide login, show start screen
+            loginPage.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            // store last used username
+            if (state.account && state.account.username) localStorage.setItem('greed_last_account', state.account.username);
+            updateUI();
+        }
+
+        loginExistingBtn.addEventListener('click', () => {
+            const name = (loginUsernameInput.value || '').trim();
             if (!name) {
-                gameMessageEl.textContent = 'Please enter a username.';
+                gameMessageEl.textContent = 'Please enter a username to login.';
+                gameMessageEl.style.color = '#ef4444';
+                return;
+            }
+            // try load existing account
+            const accKey = `tag_account_${name}`;
+            const raw = localStorage.getItem(accKey);
+            if (!raw) {
+                gameMessageEl.textContent = `Account '${name}' not found. Use Register to create it.`;
                 gameMessageEl.style.color = '#ef4444';
                 return;
             }
             state.account = loadAccount(name);
-            // compute level from any existing xp
             const lvlInfo = computeLevelFromXp(state.account.xp || 0);
             state.account.level = lvlInfo.level;
             state.account.xpInLevel = lvlInfo.xpInLevel;
             saveAccount(state.account);
-            localStorage.setItem('greed_last_account', name);
-            updateUI();
             gameMessageEl.textContent = `Logged in as ${state.account.username}`;
             gameMessageEl.style.color = '#e2e8f0';
+            showStartScreenAfterLogin();
+        });
+
+        registerBtn.addEventListener('click', () => {
+            const name = (loginUsernameInput.value || '').trim();
+            if (!name) {
+                gameMessageEl.textContent = 'Please enter a username to register.';
+                gameMessageEl.style.color = '#ef4444';
+                return;
+            }
+            // create/overwrite account
+            state.account = { username: name, xp: 0, level: 0, xpInLevel: 0 };
+            saveAccount(state.account);
+            localStorage.setItem('greed_last_account', name);
+            gameMessageEl.textContent = `Registered and logged in as ${name}`;
+            gameMessageEl.style.color = '#e2e8f0';
+            showStartScreenAfterLogin();
         });
 
         function renderLifetimeStatsModal() {
@@ -1905,16 +1947,11 @@
 
         // Initial Load
         loadLifetimeStats();
-        // If a previously used account exists, load it (optional convenience)
-        (function autoLoadLastAccount() {
+        // Prefill last username in login box for convenience (do not auto-login)
+        (function prefillLastAccount() {
             const last = localStorage.getItem('greed_last_account');
             if (last) {
-                state.account = loadAccount(last);
-                const lvlInfo = computeLevelFromXp(state.account.xp || 0);
-                state.account.level = lvlInfo.level;
-                state.account.xpInLevel = lvlInfo.xpInLevel;
-                usernameInput.value = state.account.username;
-                updateUI();
+                loginUsernameInput.value = last;
             }
         })();
         
