@@ -172,7 +172,7 @@
 
     <div class="w-full max-w-4xl mx-auto">
         <h1 class="text-4xl font-bold text-center mb-2 text-slate-200">GREED</h1>
-        <p class="text-center text-slate-400 mb-6">Make Money Lose Money.</p>
+        <p class="text-center text-slate-400 mb-6">Make Money Lose Money</p>
 
         <!-- Stats Display -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
@@ -289,8 +289,9 @@
             </div>
         </div>
         
-        <div id="startScreen" class="text-center p-6">
+        <div id="startScreen" class="text-center p-6 space-x-4">
              <button id="startRunBtn" class="btn btn-primary font-bold py-4 px-10 rounded-lg text-xl">Start New Run</button>
+             <button id="lifetimeStatsBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-4 px-10 rounded-lg text-xl">Lifetime Stats</button>
         </div>
     </div>
 
@@ -318,6 +319,20 @@
             <table class="stats-table text-sm">
                 <thead><tr><th>Game</th><th>W/L</th><th>Win Rate</th><th>Profit</th><th>Wagered</th></tr></thead>
                 <tbody id="statsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Lifetime Stats Modal -->
+    <div id="lifetimeStatsModal" class="fixed inset-0 items-center justify-center hidden modal-backdrop p-4">
+        <div class="stats-modal-content p-6 rounded-lg shadow-2xl w-full max-w-3xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-3xl font-bold">Lifetime Statistics</h2>
+                <button id="closeLifetimeStatsBtn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <table class="stats-table text-sm">
+                <thead><tr><th>Game</th><th>W/L</th><th>Win Rate</th><th>Profit</th><th>Wagered</th></tr></thead>
+                <tbody id="lifetimeStatsTableBody"></tbody>
             </table>
         </div>
     </div>
@@ -371,9 +386,14 @@
         const playerScoreEl = document.getElementById('playerScore');
         const kenoGridEl = document.getElementById('kenoGrid');
         const kenoPayoutsEl = document.getElementById('kenoPayouts');
+        const lifetimeStatsBtn = document.getElementById('lifetimeStatsBtn');
+        const lifetimeStatsModal = document.getElementById('lifetimeStatsModal');
+        const closeLifetimeStatsBtn = document.getElementById('closeLifetimeStatsBtn');
+        const lifetimeStatsTableBody = document.getElementById('lifetimeStatsTableBody');
 
         // --- Game State ---
         let state = {};
+        let lifetimeStats = {};
 
         // --- Timers and Intervals ---
         let runTimerInterval = null;
@@ -589,6 +609,7 @@
             state.runActive = false;
             clearInterval(runTimerInterval);
             clearInterval(crashLoopInterval);
+            updateLifetimeStats();
             const score = wasBust ? 0 : state.currentCash;
             modalTitle.textContent = wasBust ? "Run Busted!" : "Run Complete!";
             modalMessage.textContent = wasBust 
@@ -1032,6 +1053,54 @@
             updateUI();
         }
 
+        // --- Lifetime Stats Logic ---
+        function loadLifetimeStats() {
+            const savedStats = localStorage.getItem('greedLifetimeStats');
+            if (savedStats) {
+                lifetimeStats = JSON.parse(savedStats);
+            } else {
+                lifetimeStats = {
+                    overall: createEmptyStats(),
+                    crash: createEmptyStats(),
+                    mines: createEmptyStats(),
+                    dice: createEmptyStats(),
+                    blackjack: createEmptyStats(),
+                    keno: createEmptyStats(),
+                };
+            }
+        }
+
+        function saveLifetimeStats() {
+            localStorage.setItem('greedLifetimeStats', JSON.stringify(lifetimeStats));
+        }
+
+        function updateLifetimeStats() {
+            const games = ['overall', 'crash', 'mines', 'dice', 'blackjack', 'keno'];
+            games.forEach(gameKey => {
+                const run = state.runStats[gameKey];
+                const life = lifetimeStats[gameKey];
+                life.wins += run.wins;
+                life.losses += run.losses;
+                life.wagered += run.wagered;
+                life.won += run.won;
+            });
+            saveLifetimeStats();
+        }
+
+        function renderLifetimeStatsModal() {
+            lifetimeStatsTableBody.innerHTML = '';
+            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'overall'];
+            games.forEach(gameKey => {
+                const stats = lifetimeStats[gameKey];
+                if (!stats) return;
+                const profit = stats.won - stats.wagered;
+                const totalBets = stats.wins + stats.losses;
+                const winRate = totalBets > 0 ? `${((stats.wins / totalBets) * 100).toFixed(2)}%` : 'N/A';
+                const row = `<tr><td class="font-bold">${gameKey.charAt(0).toUpperCase() + gameKey.slice(1)}</td><td>${stats.wins} / ${stats.losses}</td><td>${winRate}</td><td style="color: ${profit >= 0 ? '#4ade80' : '#ef4444'}">${formatCurrency(profit)}</td><td>${formatCurrency(stats.wagered, false)}</td></tr>`;
+                lifetimeStatsTableBody.innerHTML += row;
+            });
+        }
+
         // --- Event Listeners ---
         gameTabs.forEach(tab => tab.addEventListener('click', () => switchGame(tab.dataset.game)));
         startRunBtn.addEventListener('click', initializeRun);
@@ -1061,6 +1130,19 @@
         });
         hitBtn.addEventListener('click', blackjackHit);
         standBtn.addEventListener('click', blackjackStand);
+        
+        lifetimeStatsBtn.addEventListener('click', () => {
+            renderLifetimeStatsModal();
+            lifetimeStatsModal.classList.remove('hidden');
+            lifetimeStatsModal.classList.add('flex');
+        });
+        closeLifetimeStatsBtn.addEventListener('click', () => {
+            lifetimeStatsModal.classList.add('hidden');
+            lifetimeStatsModal.classList.remove('flex');
+        });
+
+        // Initial Load
+        loadLifetimeStats();
         
     </script>
 </body>
