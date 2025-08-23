@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GREED</title>
+    <title>Try Again Gaming - The Only Online Casino That\'s 100% Free Forever</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
@@ -266,8 +266,8 @@
 <body class="flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-4xl mx-auto">
-        <h1 class="text-4xl font-bold text-center mb-2 text-slate-200">GREED</h1>
-        <p class="text-center text-slate-400 mb-6">Make Money Lose Money</p>
+    <h1 class="text-4xl font-bold text-center mb-2 text-slate-200">Try Again Gaming</h1>
+    <p class="text-center text-slate-400 mb-6">The Only Online Casino That\'s 100% Free Forever</p>
 
         <!-- Stats Display -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
@@ -276,8 +276,15 @@
                 <p id="currentCash" class="text-2xl font-bold text-green-400">$100.00</p>
             </div>
             <div class="stat-box p-4 rounded-lg">
-                <h2 class="text-sm font-semibold text-slate-400 uppercase">Firewall</h2>
-                <p id="firewallValue" class="text-2xl font-bold text-red-400">$0.00</p>
+                <h2 class="text-sm font-semibold text-slate-400 uppercase">Account</h2>
+                <div id="accountInfo" class="text-left">
+                    <div id="accountName" class="text-lg font-bold text-slate-200">Not logged in</div>
+                    <div id="accountLevel" class="text-sm text-slate-400">Level: 0</div>
+                    <div class="w-full bg-slate-700 h-2 rounded mt-2 overflow-hidden">
+                        <div id="accountXpBar" class="h-2 bg-green-400" style="width:0%"></div>
+                    </div>
+                    <div id="accountXpText" class="text-xs text-slate-400 mt-1">XP: 0</div>
+                </div>
             </div>
             <div class="stat-box p-4 rounded-lg">
                 <h2 class="text-sm font-semibold text-slate-400 uppercase">Run Time</h2>
@@ -478,8 +485,14 @@
         </div>
         
         <div id="startScreen" class="text-center p-6 space-x-4">
-             <button id="startRunBtn" class="btn btn-primary font-bold py-4 px-10 rounded-lg text-xl">Start New Run</button>
-             <button id="lifetimeStatsBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-4 px-10 rounded-lg text-xl">Lifetime Stats</button>
+             <div class="mb-4">
+                 <input id="usernameInput" placeholder="Enter username" class="input-field p-3 rounded-md w-64" />
+                 <button id="loginBtn" class="btn btn-secondary font-bold py-2 px-4 rounded-md ml-2">Login / Create</button>
+             </div>
+             <div>
+                 <button id="startRunBtn" class="btn btn-primary font-bold py-4 px-10 rounded-lg text-xl">Start New Run</button>
+                 <button id="lifetimeStatsBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-4 px-10 rounded-lg text-xl">Lifetime Stats</button>
+             </div>
         </div>
     </div>
 
@@ -528,8 +541,11 @@
 
     <script>
         // --- DOM Elements ---
-        const currentCashEl = document.getElementById('currentCash');
-        const firewallValueEl = document.getElementById('firewallValue');
+    const currentCashEl = document.getElementById('currentCash');
+    const accountNameEl = document.getElementById('accountName');
+    const accountLevelEl = document.getElementById('accountLevel');
+    const accountXpBarEl = document.getElementById('accountXpBar');
+    const accountXpTextEl = document.getElementById('accountXpText');
         const runTimeEl = document.getElementById('runTime');
         const gameMessageEl = document.getElementById('gameMessage');
         const betAmountInput = document.getElementById('betAmount');
@@ -564,6 +580,7 @@
         const diceResultDisplay = document.getElementById('diceResultDisplay');
         const statsGraphCanvas = document.getElementById('statsGraph');
         const statsGraphCtx = statsGraphCanvas.getContext('2d');
+    const statsTableBody = document.getElementById('statsTableBody');
         const blackjackControls = document.getElementById('blackjackControls');
         const hitBtn = document.getElementById('hitBtn');
         const standBtn = document.getElementById('standBtn');
@@ -611,11 +628,11 @@
         // --- Timers and Intervals ---
         let runTimerInterval = null;
         let crashLoopInterval = null;
-        let pausedTime = 0;
-        let timeAtPause = 0;
+    let pausedTime = 0;
+    let timeAtPause = 0;
         
         // --- Constants ---
-        const BOMB_SVG = '<svg viewBox="0 0 24 24" fill="white" class="w-8 h-8"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"/><path d="M16,4.47a1,1,0,0,0-1.15-.83l-2.4,0.8a1,1,0,0,0-.8,1.15l0.8,2.4A1,1,0,0,0,14,8.82a1,1,0,0,0,.85-0.38l2-2A1,1,0,0,0,16,4.47Z"/></svg>';
+    const BOMB_SVG = '<svg viewBox="0 0 24 24" fill="white" class="w-8 h-8"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"/><path d="M16,4.47a1,1,0,0,0-1.15-.83l-2.4,0.8a1,1,0,0,0-.8,1.15l0.8,2.4A1,1,0,0,0,14,8.82a1,1,0,0,0,.85-0.38l2-2A1,1,0,0,0,16,4.47Z"/></svg>';
         const SLIDE_MULTIPLIERS = {
             easy:   [{m:0, w:30, c:'bg-slate-500'}, {m:0.1, w:20, c:'bg-slate-500'}, {m:0.2, w:15, c:'bg-slate-500'}, {m:0.5, w:10, c:'bg-green-500'}, {m:1.2, w:10, c:'bg-green-500'}, {m:1.5, w:8, c:'bg-blue-500'}, {m:2, w:7, c:'bg-blue-500'}],
             medium: [{m:0, w:50, c:'bg-slate-500'}, {m:0.2, w:15, c:'bg-green-500'}, {m:0.5, w:10, c:'bg-green-500'}, {m:1.5, w:10, c:'bg-blue-500'}, {m:3, w:8, c:'bg-blue-500'}, {m:5, w:5, c:'bg-purple-600'}, {m:20, w:2, c:'bg-purple-600'}],
@@ -644,12 +661,12 @@
         function initializeRun() {
             pausedTime = 0;
             timeAtPause = 0;
+            const previousAccount = state.account;
             state = {
                 runActive: true,
                 isPaused: false,
                 currentCash: 100.00,
                 maxCashReached: 100.00,
-                firewallValue: 0.00,
                 runStartTime: Date.now(),
                 gameInProgress: false,
                 currentBet: 0,
@@ -692,6 +709,8 @@
                     sessionProfit: 0,
                 }
             };
+            // restore account if logged in
+            if (previousAccount) state.account = previousAccount;
             startScreen.classList.add('hidden');
             gameArea.classList.remove('hidden');
             gameOverModal.classList.add('hidden');
@@ -709,7 +728,6 @@
                 if (state.runActive && !state.isPaused) {
                     const elapsedSeconds = Math.floor((Date.now() - state.runStartTime - pausedTime) / 1000);
                     runTimeEl.textContent = formatTime(elapsedSeconds);
-                    calculateAndApplyFirewallTick();
                     updateUI();
                 }
             }, 1000);
@@ -727,32 +745,7 @@
             pausedTime += Date.now() - timeAtPause;
         }
 
-        function calculateAndApplyFirewallTick() {
-            if (!state.runActive) return;
-            const elapsedSeconds = Math.floor((Date.now() - state.runStartTime - pausedTime) / 1000);
-            let tickRate = 0.01;
-            const gracePeriod = 30;
-            if (elapsedSeconds > gracePeriod) tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
-            if (state.maxCashReached > 1000000) tickRate *= 30;
-            else if (state.maxCashReached > 500000) tickRate *= 15;
-            else if (state.maxCashReached > 100000) tickRate *= 8;
-            else if (state.maxCashReached > 50000) tickRate *= 4;
-            else if (state.maxCashReached > 10000) tickRate *= 2;
-            state.firewallValue += tickRate;
-        }
-
-        function checkForFirewallMilestoneJump(oldMax, newMax) {
-            const milestones = [10000, 100000, 1000000];
-            let jumpAmount = 0;
-            milestones.forEach(ms => {
-                if (oldMax < ms && newMax >= ms) {
-                    if (ms === 10000) jumpAmount += 1000;
-                    if (ms === 100000) jumpAmount += 25000;
-                    if (ms === 1000000) jumpAmount += 500000;
-                }
-            });
-            if (jumpAmount > 0) state.firewallValue += jumpAmount;
-        }
+    // Account XP/level system replaces old firewall mechanic
 
         function placeBet() {
             if (state.gameInProgress) return;
@@ -818,19 +811,14 @@
         function handleWin(winnings, betAmount) {
             const profit = winnings - betAmount;
             addResultToHistory(state.currentGame, { profit });
-
-            const oldMaxCash = state.maxCashReached;
             state.currentCash += winnings;
-            if (state.currentCash > state.maxCashReached) {
-                state.maxCashReached = state.currentCash;
-                checkForFirewallMilestoneJump(oldMaxCash, state.maxCashReached);
-            }
             state.runStats.overall.wins++;
             state.runStats.overall.won += winnings;
             state.runStats[state.currentGame].wins++;
             state.runStats[state.currentGame].won += winnings;
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
             updateLiveStatsUI();
+            awardXpForWin(winnings, betAmount);
             
             if (state.autoBet.isActive) {
                 runNextAutoBet(true);
@@ -863,7 +851,7 @@
                 runNextAutoBet(false);
             }
             
-            if (state.currentCash < state.firewallValue) setTimeout(() => endRun(true), 1000);
+            // Firewall check removed; runs no longer auto-end on firewall
             updateUI();
         }
         
@@ -890,7 +878,7 @@
             const score = wasBust ? 0 : state.currentCash;
             modalTitle.textContent = wasBust ? "Run Busted!" : "Run Complete!";
             modalMessage.textContent = wasBust 
-                ? `Your cash dropped below the Firewall of ${formatCurrency(state.firewallValue, false)}.`
+                ? `Your run ended with a bust.`
                 : "You successfully cashed out your run.";
             finalScore.textContent = formatCurrency(score, false);
             gameOverModal.classList.remove('hidden');
@@ -1562,7 +1550,19 @@
         function updateUI() {
             if (!state.runActive) return;
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
-            firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
+            // Update account UI
+            if (state.account && state.account.username) {
+                accountNameEl.textContent = state.account.username;
+                accountLevelEl.textContent = `Level: ${state.account.level}`;
+                const pct = state.account.xpInLevel / xpForLevel(state.account.level) * 100;
+                accountXpBarEl.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+                accountXpTextEl.textContent = `XP: ${state.account.xp} (Next: ${xpForLevel(state.account.level)})`;
+            } else {
+                accountNameEl.textContent = 'Not logged in';
+                accountLevelEl.textContent = 'Level: 0';
+                accountXpBarEl.style.width = '0%';
+                accountXpTextEl.textContent = 'XP: 0';
+            }
             
             const isAutoBetting = state.autoBet.isActive;
             const controlsDisabled = state.gameInProgress || isAutoBetting;
@@ -1667,6 +1667,75 @@
             });
             saveLifetimeStats();
         }
+
+        // --- Account & XP/Level System ---
+        function xpForLevel(level) {
+            // Exponential-ish growth: base 100 XP, grows by 1.5x per level
+            return Math.floor(100 * Math.pow(1.5, level));
+        }
+
+        function loadAccount(username) {
+            const key = `tag_account_${username}`;
+            const raw = localStorage.getItem(key);
+            if (raw) return JSON.parse(raw);
+            return { username, xp: 0, level: 0, xpInLevel: 0 };
+        }
+
+        function saveAccount(account) {
+            const key = `tag_account_${account.username}`;
+            localStorage.setItem(key, JSON.stringify(account));
+        }
+
+        function computeLevelFromXp(totalXp) {
+            let level = 0;
+            let remaining = totalXp;
+            while (remaining >= xpForLevel(level)) {
+                remaining -= xpForLevel(level);
+                level++;
+                // safety cap to avoid infinite loops on bad data
+                if (level > 10000) break;
+            }
+            return { level, xpInLevel: remaining };
+        }
+
+        function awardXpForWin(winnings, betAmount) {
+            if (!state.account || !state.account.username) return;
+            // XP award: base on profit ratio and bet size. Larger wins -> more xp.
+            const profit = Math.max(0, winnings - betAmount);
+            // scale: base 10 XP per dollar profit, with sqrt dampening and small floor
+            const xpGained = Math.max(1, Math.floor(Math.sqrt(profit + 1) * 10));
+            state.account.xp += xpGained;
+            const lvlInfo = computeLevelFromXp(state.account.xp);
+            state.account.level = lvlInfo.level;
+            state.account.xpInLevel = lvlInfo.xpInLevel;
+            saveAccount(state.account);
+            // show small notification
+            gameMessageEl.textContent = `You earned ${xpGained} XP!`;
+            setTimeout(() => gameMessageEl.textContent = '\u00A0', 2000);
+        }
+
+        // Login / create
+        const usernameInput = document.getElementById('usernameInput');
+        const loginBtn = document.getElementById('loginBtn');
+
+        loginBtn.addEventListener('click', () => {
+            const name = (usernameInput.value || '').trim();
+            if (!name) {
+                gameMessageEl.textContent = 'Please enter a username.';
+                gameMessageEl.style.color = '#ef4444';
+                return;
+            }
+            state.account = loadAccount(name);
+            // compute level from any existing xp
+            const lvlInfo = computeLevelFromXp(state.account.xp || 0);
+            state.account.level = lvlInfo.level;
+            state.account.xpInLevel = lvlInfo.xpInLevel;
+            saveAccount(state.account);
+            localStorage.setItem('greed_last_account', name);
+            updateUI();
+            gameMessageEl.textContent = `Logged in as ${state.account.username}`;
+            gameMessageEl.style.color = '#e2e8f0';
+        });
 
         function renderLifetimeStatsModal() {
             lifetimeStatsTableBody.innerHTML = '';
@@ -1836,6 +1905,18 @@
 
         // Initial Load
         loadLifetimeStats();
+        // If a previously used account exists, load it (optional convenience)
+        (function autoLoadLastAccount() {
+            const last = localStorage.getItem('greed_last_account');
+            if (last) {
+                state.account = loadAccount(last);
+                const lvlInfo = computeLevelFromXp(state.account.xp || 0);
+                state.account.level = lvlInfo.level;
+                state.account.xpInLevel = lvlInfo.xpInLevel;
+                usernameInput.value = state.account.username;
+                updateUI();
+            }
+        })();
         
     </script>
 </body>
