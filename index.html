@@ -590,7 +590,8 @@
             gameMessageEl.textContent = "Multiplier increasing...";
             crashLoopInterval = setInterval(() => {
                 if (!state.gameInProgress) { clearInterval(crashLoopInterval); return; }
-                state.crash.multiplier += 0.01 * Math.pow(1.01, state.crash.multiplier);
+                // New exponential growth logic
+                state.crash.multiplier += 0.01 * Math.pow(1.015, state.crash.multiplier);
                 if (state.crash.multiplier >= state.crash.crashPoint) handleLoss();
                 updateUI();
             }, 100);
@@ -643,7 +644,7 @@
             tile.classList.add('revealed');
             if (state.mines.grid[index] === 'mine') {
                 tile.classList.add('mine');
-                tile.innerHTML = '💣';
+                tile.innerHTML = '�';
                 handleLoss();
             } else {
                 tile.classList.add('gem');
@@ -923,7 +924,7 @@
                         handleLoss();
                     }
                     setTimeout(() => {
-                        renderKenoBoard();
+                        // Don't auto-refresh here, wait for next bet
                         resetGameRound();
                         updateUI();
                     }, 2000);
@@ -1043,3 +1044,4 @@
     </script>
 </body>
 </html>
+�
