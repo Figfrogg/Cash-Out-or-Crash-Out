@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,74 +217,6 @@
         .risk-btn.active {
             background-color: #4f46e5;
         }
-        
-        /* Tower Styles */
-        #towerContainer {
-            display: flex;
-            flex-direction: column-reverse; /* Start from the bottom */
-            gap: 8px;
-            width: 100%;
-            max-width: 300px;
-            margin: 0 auto;
-            min-height: 400px; /* Give it some default height */
-            transition: border-color 0.5s, box-shadow 0.5s;
-            border: 2px solid transparent;
-            border-radius: 8px;
-            padding: 8px;
-        }
-        .tower-row {
-            display: grid;
-            gap: 8px;
-            width: 100%;
-        }
-        .tower-tile {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            background-color: #475569;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .tower-row:not(.active) .tower-tile {
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-        .tower-tile:hover:not(:disabled) {
-            transform: scale(1.05);
-        }
-        .tower-tile.revealed {
-            cursor: default;
-            transform: scale(0.95);
-        }
-        .tower-tile.gem {
-            background-color: #10b981;
-        }
-        .tower-tile.skull {
-            background-color: #ef4444;
-        }
-        
-        /* Tower Animations */
-        @keyframes tower-glow {
-            0%, 100% { box-shadow: 0 0 5px #10b981, 0 0 10px #10b981, 0 0 15px #10b981; }
-            50% { box-shadow: 0 0 10px #34d399, 0 0 20px #34d399, 0 0 30px #34d399; }
-        }
-        .tower-success-pulse {
-            animation: tower-glow 1.5s ease-in-out infinite;
-            border-color: #10b981;
-        }
-
-        @keyframes multiplier-pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.15); color: #4ade80; }
-            100% { transform: scale(1); }
-        }
-        .multiplier-update {
-            animation: multiplier-pop 0.5s ease-out;
-        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -319,7 +252,6 @@
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="slide">Slide</button>
-                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="tower">Tower</button>
             </div>
 
             <!-- Game Displays -->
@@ -377,13 +309,6 @@
                     </div>
                 </div>
             </div>
-            <div id="towerGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
-                    <div id="towerContainer">
-                        <!-- Tower will be generated here by JS -->
-                    </div>
-                </div>
-            </div>
             
             <p id="gameMessage" class="text-lg text-center text-slate-400 mt-2 mb-4 h-8">&nbsp;</p>
 
@@ -415,14 +340,6 @@
                             <button class="risk-btn btn flex-1" data-risk="medium">Medium</button>
                             <button class="risk-btn btn flex-1" data-risk="hard">Hard</button>
                             <button class="risk-btn btn flex-1" data-risk="expert">Expert</button>
-                        </div>
-                    </div>
-                    <div id="towerControls" class="mt-2 hidden">
-                        <label class="block text-sm font-medium mb-1 text-slate-400">Difficulty</label>
-                        <div class="flex space-x-2">
-                            <button class="risk-btn btn flex-1 active" data-risk="easy">Easy</button>
-                            <button class="risk-btn btn flex-1" data-risk="medium">Medium</button>
-                            <button class="risk-btn btn flex-1" data-risk="hard">Hard</button>
                         </div>
                     </div>
                 </div>
@@ -562,9 +479,6 @@
         const limboTargetInput = document.getElementById('limboTarget');
         const limboWinChanceEl = document.getElementById('limboWinChance');
         const limboResultDisplay = document.getElementById('limboResultDisplay');
-        const towerContainer = document.getElementById('towerContainer');
-        const towerControls = document.getElementById('towerControls');
-        const towerRiskBtns = document.querySelectorAll('#towerControls .risk-btn');
 
         // --- Game State ---
         let state = {};
@@ -579,21 +493,11 @@
         
         // --- Constants ---
         const BOMB_SVG = '<svg viewBox="0 0 24 24" fill="white" class="w-8 h-8"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"/><path d="M16,4.47a1,1,0,0,0-1.15-.83l-2.4,0.8a1,1,0,0,0-.8,1.15l0.8,2.4A1,1,0,0,0,14,8.82a1,1,0,0,0,.85-0.38l2-2A1,1,0,0,0,16,4.47Z"/></svg>';
-        const SKULL_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-white"><path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" /></svg>';
-        const EGG_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-white"><path d="M12 2.25a.75.75 0 0 1 .75.75v11.5a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75Z" /><path d="m8.25 9.75.038.038a.75.75 0 0 1-1.06 1.06L4.5 8.122a.75.75 0 0 1 1.06-1.061l2.69 2.689Zm7.5 0 2.72-2.72a.75.75 0 0 1 1.06 1.061L16.538 10.85a.75.75 0 0 1-1.06-1.061l.038-.038Z" /><path d="M12 15.75a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0v-3a.75.75 0 0 1 .75-.75Z" /></svg>';
-
         const SLIDE_MULTIPLIERS = {
             easy:   [{m:0, w:30, c:'bg-slate-500'}, {m:0.1, w:20, c:'bg-slate-500'}, {m:0.2, w:15, c:'bg-slate-500'}, {m:0.5, w:10, c:'bg-green-500'}, {m:1.2, w:10, c:'bg-green-500'}, {m:1.5, w:8, c:'bg-blue-500'}, {m:2, w:7, c:'bg-blue-500'}],
             medium: [{m:0, w:50, c:'bg-slate-500'}, {m:0.2, w:15, c:'bg-green-500'}, {m:0.5, w:10, c:'bg-green-500'}, {m:1.5, w:10, c:'bg-blue-500'}, {m:3, w:8, c:'bg-blue-500'}, {m:5, w:5, c:'bg-purple-600'}, {m:20, w:2, c:'bg-purple-600'}],
             hard:   [{m:0, w:70, c:'bg-slate-500'}, {m:0.1, w:10, c:'bg-green-500'}, {m:2, w:8, c:'bg-blue-500'}, {m:5, w:5, c:'bg-purple-600'}, {m:10, w:4, c:'bg-purple-600'}, {m:25, w:2, c:'bg-yellow-500'}, {m:100, w:1, c:'bg-yellow-500'}],
             expert: [{m:0, w:94, c:'bg-slate-500'}, {m:5, w:2, c:'bg-purple-600'}, {m:20, w:1.5, c:'bg-yellow-500'}, {m:100, w:1, c:'bg-yellow-500'}, {m:500, w:0.9, c:'bg-yellow-500'}, {m:2000, w:0.5, c:'bg-pink-500'}, {m:10000, w:0.1, c:'bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500'}]
-        };
-
-        const TOWER_CONFIG = {
-            rows: 8,
-            easy:   { tiles: 4, skulls: 1 },
-            medium: { tiles: 3, skulls: 1 },
-            hard:   { tiles: 2, skulls: 1 }
         };
 
 
@@ -635,7 +539,6 @@
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
                 slide: { risk: 'easy' },
-                tower: { level: 0, risk: 'easy', towerData: [], payoutMultiplier: 1.0 },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -646,7 +549,6 @@
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
                     slide: createEmptyStats(),
-                    tower: createEmptyStats(),
                 }
             };
             startScreen.classList.add('hidden');
@@ -739,7 +641,6 @@
             if (state.currentGame === 'blackjack') startBlackjackGame();
             if (state.currentGame === 'keno') startKenoGame();
             if (state.currentGame === 'slide') startSlideGame();
-            if (state.currentGame === 'tower') startTowerGame();
             updateUI();
         }
 
@@ -754,10 +655,6 @@
                 const roundBet = state.mines.roundBet || state.currentRoundBet;
                 winnings = roundBet * state.mines.payoutMultiplier;
                 gameMessageEl.textContent = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
-            } else if (state.currentGame === 'tower') {
-                const roundBet = state.tower.roundBet || state.currentRoundBet;
-                winnings = roundBet * state.tower.payoutMultiplier;
-                gameMessageEl.textContent = `Cashed out ${formatCurrency(winnings, false)} at level ${state.tower.level}!`;
             }
             handleWin(winnings);
             gameMessageEl.style.color = '#4ade80';
@@ -789,10 +686,6 @@
                 gameMessageEl.textContent = `You hit a mine!`;
                 revealAllMines();
             }
-            else if (state.currentGame === 'tower') {
-                gameMessageEl.textContent = `You found a skull!`;
-                // reveal tower logic is handled in onTowerTileClick
-            }
             state.runStats.overall.losses++;
             state.runStats[state.currentGame].losses++;
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
@@ -812,14 +705,10 @@
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
             state.blackjack.status = 'betting';
-            state.tower.level = 0;
-            state.tower.payoutMultiplier = 1.0;
-            towerContainer.classList.remove('tower-success-pulse');
             // clear per-game locked round bets
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
-            if (state.tower) state.tower.roundBet = 0;
         }
 
         function endRun(wasBust = false) {
@@ -1134,13 +1023,13 @@
         }
         
         function revealAllMines() {
-          const tiles = minesGridEl.children;
-          state.mines.grid.forEach((type, index) => {
-              if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
-                  tiles[index].classList.add('revealed', 'mine');
-                  tiles[index].innerHTML = BOMB_SVG;
-              }
-          });
+           const tiles = minesGridEl.children;
+           state.mines.grid.forEach((type, index) => {
+               if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
+                   tiles[index].classList.add('revealed', 'mine');
+                   tiles[index].innerHTML = BOMB_SVG;
+               }
+           });
         }
 
         function updateDiceUI() {
@@ -1480,117 +1369,6 @@
             }, 4500);
         }
 
-        // --- Tower Logic ---
-        function startTowerGame() {
-            state.tower.level = 0;
-            state.tower.payoutMultiplier = 1.0;
-            state.tower.roundBet = state.currentRoundBet;
-            generateTowerData();
-            renderTower();
-            gameMessageEl.textContent = `Climb the tower! Current Payout: 1.00x`;
-        }
-
-        function generateTowerData() {
-            const { risk } = state.tower;
-            const { rows } = TOWER_CONFIG;
-            const { tiles, skulls } = TOWER_CONFIG[risk];
-            state.tower.towerData = [];
-            for (let i = 0; i < rows; i++) {
-                const level = Array(tiles).fill('gem');
-                let skullsPlaced = 0;
-                while (skullsPlaced < skulls) {
-                    const index = Math.floor(Math.random() * tiles);
-                    if (level[index] !== 'skull') {
-                        level[index] = 'skull';
-                        skullsPlaced++;
-                    }
-                }
-                state.tower.towerData.push(level);
-            }
-        }
-
-        function renderTower() {
-            towerContainer.innerHTML = '';
-            const { risk, level: currentLevel } = state.tower;
-            const { rows } = TOWER_CONFIG;
-            const { tiles } = TOWER_CONFIG[risk];
-
-            for (let i = 0; i < rows; i++) {
-                const rowEl = document.createElement('div');
-                rowEl.classList.add('tower-row');
-                rowEl.style.gridTemplateColumns = `repeat(${tiles}, 1fr)`;
-                if (i === currentLevel && state.gameInProgress) {
-                    rowEl.classList.add('active');
-                }
-
-                for (let j = 0; j < tiles; j++) {
-                    const tileEl = document.createElement('button');
-                    tileEl.classList.add('tower-tile');
-                    tileEl.dataset.level = i;
-                    tileEl.dataset.tile = j;
-                    if (i === currentLevel && state.gameInProgress) {
-                        tileEl.addEventListener('click', () => onTowerTileClick(i, j));
-                    } else {
-                        tileEl.disabled = true;
-                    }
-                    rowEl.appendChild(tileEl);
-                }
-                towerContainer.appendChild(rowEl);
-            }
-        }
-        
-        function onTowerTileClick(level, tileIndex) {
-            if (!state.gameInProgress || level !== state.tower.level) return;
-
-            const clickedRow = towerContainer.children[level];
-            const tileType = state.tower.towerData[level][tileIndex];
-
-            // Reveal all tiles on the current row
-            const tilesInRow = clickedRow.children;
-            for(let i = 0; i < tilesInRow.length; i++) {
-                const tile = tilesInRow[i];
-                tile.classList.add('revealed');
-                tile.disabled = true;
-                if(state.tower.towerData[level][i] === 'skull') {
-                    tile.classList.add('skull');
-                    tile.innerHTML = SKULL_SVG;
-                } else {
-                    tile.classList.add('gem');
-                    tile.innerHTML = EGG_SVG;
-                }
-            }
-
-            if (tileType === 'skull') {
-                towerContainer.classList.remove('tower-success-pulse');
-                setTimeout(() => handleLoss(), 500); // Delay to show result
-            } else {
-                // It's a gem, advance
-                const { risk } = state.tower;
-                const { tiles, skulls } = TOWER_CONFIG[risk];
-                const multiplierIncrease = tiles / (tiles - skulls);
-                state.tower.payoutMultiplier *= multiplierIncrease;
-                state.tower.level++;
-
-                gameMessageEl.textContent = `Level Cleared! Payout: ${state.tower.payoutMultiplier.toFixed(2)}x`;
-                
-                // --- Animation Triggering ---
-                gameMessageEl.classList.add('multiplier-update');
-                towerContainer.classList.add('tower-success-pulse');
-                setTimeout(() => gameMessageEl.classList.remove('multiplier-update'), 500);
-                
-                if (state.tower.level >= TOWER_CONFIG.rows) {
-                    // Reached the top, auto cash out
-                    gameMessageEl.textContent = `TOWER COMPLETE! Auto-cashing out...`;
-                    setTimeout(() => cashOut(), 1000);
-                } else {
-                    // Re-render the tower to activate the next level
-                    setTimeout(() => {
-                        renderTower();
-                    }, 500);
-                }
-            }
-            updateUI();
-        }
 
         // --- UI and Stats Logic ---
         function updateLiveStatsUI() {
@@ -1606,7 +1384,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'tower', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -1647,7 +1425,7 @@
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
             firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
             placeBetBtn.disabled = state.gameInProgress;
-            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines', 'tower'].includes(state.currentGame);
+            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines'].includes(state.currentGame);
             betAmountInput.disabled = state.gameInProgress;
             mineCountInput.disabled = state.gameInProgress;
             diceSlider.disabled = state.gameInProgress;
@@ -1669,7 +1447,6 @@
             diceControls.classList.toggle('hidden', gameName !== 'dice');
             blackjackControls.classList.toggle('hidden', true); // Always hide on switch
             slideControls.classList.toggle('hidden', gameName !== 'slide');
-            towerControls.classList.toggle('hidden', gameName !== 'tower');
             
             gameMessageEl.textContent = '\u00A0';
             if (gameName === 'limbo') updateLimboUI();
@@ -1678,26 +1455,29 @@
                 renderKenoBoard();
                 updateKenoPayouts();
             }
-            if (gameName === 'tower') {
-                renderTower(); // Initial render on switch
-            }
             updateUI();
         }
 
         // --- Lifetime Stats Logic ---
         function loadLifetimeStats() {
             const savedStats = localStorage.getItem('greedLifetimeStats');
-            const defaultGames = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'tower'];
+            const defaultGames = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             if (savedStats) {
                 lifetimeStats = JSON.parse(savedStats) || {};
                 defaultGames.forEach(gameKey => {
                     if (!lifetimeStats[gameKey]) lifetimeStats[gameKey] = createEmptyStats();
                 });
             } else {
-                lifetimeStats = {};
-                defaultGames.forEach(gameKey => {
-                    lifetimeStats[gameKey] = createEmptyStats();
-                });
+                lifetimeStats = {
+                    overall: createEmptyStats(),
+                    crash: createEmptyStats(),
+                    limbo: createEmptyStats(),
+                    mines: createEmptyStats(),
+                    dice: createEmptyStats(),
+                    blackjack: createEmptyStats(),
+                    keno: createEmptyStats(),
+                    slide: createEmptyStats(),
+                };
             }
         }
 
@@ -1706,7 +1486,7 @@
         }
 
         function updateLifetimeStats() {
-            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'tower'];
+            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
                 const life = lifetimeStats[gameKey];
@@ -1722,7 +1502,7 @@
 
         function renderLifetimeStatsModal() {
             lifetimeStatsTableBody.innerHTML = '';
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'tower', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             games.forEach(gameKey => {
                 const stats = lifetimeStats[gameKey];
                 if (!stats) return;
@@ -1781,16 +1561,6 @@
                 state.slide.risk = btn.dataset.risk;
                 slideRiskBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-            });
-        });
-
-        towerRiskBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (state.gameInProgress) return;
-                state.tower.risk = btn.dataset.risk;
-                towerRiskBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                renderTower(); // Re-render the tower with new difficulty settings
             });
         });
 
