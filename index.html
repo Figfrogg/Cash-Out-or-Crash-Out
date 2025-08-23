@@ -108,9 +108,10 @@
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.7);
         }
-        #diceResultDisplay {
+        #diceResultDisplay, #limboResultDisplay {
             font-size: 3rem;
             font-weight: 700;
+            transition: color 0.3s;
         }
         .stats-table {
             width: 100%;
@@ -242,8 +243,9 @@
         <!-- Game Area -->
         <div id="gameArea" class="game-container p-6 rounded-lg shadow-lg hidden">
             <!-- Game Tabs -->
-            <div class="flex space-x-1 mb-4 text-xs md:text-base">
+            <div class="flex flex-wrap space-x-1 mb-4 text-xs md:text-base">
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn active" data-game="crash">Crash</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="limbo">Limbo</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="mines">Mines</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="dice">Dice</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
@@ -256,6 +258,11 @@
                 <div class="relative flex flex-col items-center justify-center h-64 mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
                     <canvas id="crashChart"></canvas>
                     <p id="multiplier" class="multiplier-display text-slate-200">1.00x</p>
+                </div>
+            </div>
+            <div id="limboGame" class="game-display hidden">
+                <div class="flex flex-col items-center justify-center h-64 mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                    <div id="limboResultDisplay" class="text-slate-200">--.--x</div>
                 </div>
             </div>
             <div id="minesGame" class="game-display hidden">
@@ -309,6 +316,11 @@
                 <div>
                     <label for="betAmount" class="block text-sm font-medium mb-1 text-slate-400">Bet Amount</label>
                     <input type="number" id="betAmount" value="10" class="input-field w-full p-3 rounded-md shadow-inner">
+                    <div id="limboControls" class="mt-2 hidden">
+                         <label for="limboTarget" class="block text-sm font-medium mb-1 text-slate-400">Target Multiplier</label>
+                         <input type="number" id="limboTarget" value="2.00" step="0.01" min="1.01" class="input-field w-full p-3 rounded-md shadow-inner">
+                         <div class="text-sm mt-1 text-slate-400">Win Chance: <span id="limboWinChance" class="font-bold text-white">49.50%</span></div>
+                    </div>
                     <div id="minesControls" class="mt-2 hidden">
                          <label for="mineCount" class="block text-sm font-medium mb-1 text-slate-400">Mines (1-24)</label>
                          <input type="number" id="mineCount" value="5" min="1" max="24" class="input-field w-full p-3 rounded-md shadow-inner">
@@ -462,6 +474,10 @@
         const slideReel = document.getElementById('slideReel');
         const slideRiskBtns = document.querySelectorAll('#slideControls .risk-btn');
         const crashChartCanvas = document.getElementById('crashChart');
+        const limboControls = document.getElementById('limboControls');
+        const limboTargetInput = document.getElementById('limboTarget');
+        const limboWinChanceEl = document.getElementById('limboWinChance');
+        const limboResultDisplay = document.getElementById('limboResultDisplay');
 
         // --- Game State ---
         let state = {};
@@ -515,6 +531,7 @@
                 currentBet: 0,
                 currentGame: 'crash',
                 crash: { multiplier: 1.00, crashPoint: 0, startTime: 0 },
+                limbo: { target: 2.00 },
                 mines: { grid: [], rows: 5, cols: 5, mineCount: 5, gemsFound: 0, payoutMultiplier: 1.0 },
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
@@ -524,6 +541,7 @@
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
                     crash: createEmptyStats(),
+                    limbo: createEmptyStats(),
                     mines: createEmptyStats(),
                     dice: createEmptyStats(),
                     blackjack: createEmptyStats(),
@@ -613,6 +631,7 @@
             state.runStats.overall.wagered += betAmount;
             state.runStats[state.currentGame].wagered += betAmount;
             if (state.currentGame === 'crash') startCrashGame();
+            if (state.currentGame === 'limbo') startLimboGame();
             if (state.currentGame === 'mines') startMinesGame();
             if (state.currentGame === 'dice') startDiceGame();
             if (state.currentGame === 'blackjack') startBlackjackGame();
@@ -834,6 +853,80 @@
             };
 
             runGameLoop();
+        }
+
+        function updateLimboUI() {
+            const target = parseFloat(limboTargetInput.value);
+            if (isNaN(target) || target < 1.01) {
+                limboWinChanceEl.textContent = '0.00%';
+                return;
+            }
+            state.limbo.target = target;
+            const houseEdge = 0.99; // 1% house edge
+            const winChance = (1 / target) * 100 * houseEdge;
+            limboWinChanceEl.textContent = `${winChance.toFixed(2)}%`;
+        }
+
+        function startLimboGame() {
+            const target = state.limbo.target;
+            if (isNaN(target) || target < 1.01) {
+                gameMessageEl.textContent = "Invalid target multiplier.";
+                gameMessageEl.style.color = '#ef4444';
+                state.gameInProgress = false;
+                state.currentCash += state.currentBet;
+                return;
+            }
+
+            const result = 1 / (1 - Math.random());
+            
+            // Animation
+            let currentDisplay = 1.00;
+            const animationDuration = 800; // ms
+            const startTime = Date.now();
+
+            const animateNumber = () => {
+                const elapsedTime = Date.now() - startTime;
+                if (elapsedTime >= animationDuration) {
+                    limboResultDisplay.textContent = `${result.toFixed(2)}x`;
+                    finishLimboGame(result, target);
+                    return;
+                }
+                
+                const progress = elapsedTime / animationDuration;
+                // Ease-out effect
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                currentDisplay = 1 + (result - 1) * easedProgress;
+                limboResultDisplay.textContent = `${currentDisplay.toFixed(2)}x`;
+                
+                requestAnimationFrame(animateNumber);
+            };
+
+            limboResultDisplay.classList.remove('text-green-400', 'text-red-500');
+            limboResultDisplay.classList.add('text-slate-200');
+            requestAnimationFrame(animateNumber);
+        }
+
+        function finishLimboGame(result, target) {
+            const won = result >= target;
+            if (won) {
+                const winnings = state.currentBet * target;
+                handleWin(winnings);
+                gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
+                gameMessageEl.style.color = '#4ade80';
+                limboResultDisplay.classList.remove('text-slate-200');
+                limboResultDisplay.classList.add('text-green-400');
+            } else {
+                gameMessageEl.textContent = `You lost.`;
+                gameMessageEl.style.color = '#ef4444';
+                limboResultDisplay.classList.remove('text-slate-200');
+                limboResultDisplay.classList.add('text-red-500');
+                handleLoss();
+            }
+            
+            setTimeout(() => {
+                resetGameRound();
+                updateUI();
+            }, 1500);
         }
 
         function startMinesGame() {
@@ -1273,7 +1366,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -1314,10 +1407,11 @@
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
             firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
             placeBetBtn.disabled = state.gameInProgress;
-            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack', 'keno', 'slide'].includes(state.currentGame);
+            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines'].includes(state.currentGame);
             betAmountInput.disabled = state.gameInProgress;
             mineCountInput.disabled = state.gameInProgress;
             diceSlider.disabled = state.gameInProgress;
+            limboTargetInput.disabled = state.gameInProgress;
             blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn');
             if (state.currentGame === 'crash') {
                 multiplierEl.textContent = `${state.crash.multiplier.toFixed(2)}x`;
@@ -1329,11 +1423,15 @@
             state.currentGame = gameName;
             gameTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.game === gameName));
             gameDisplays.forEach(display => display.classList.toggle('hidden', display.id !== `${gameName}Game`));
+            
+            limboControls.classList.toggle('hidden', gameName !== 'limbo');
             minesControls.classList.toggle('hidden', gameName !== 'mines');
             diceControls.classList.toggle('hidden', gameName !== 'dice');
             blackjackControls.classList.toggle('hidden', true); // Always hide on switch
             slideControls.classList.toggle('hidden', gameName !== 'slide');
+            
             gameMessageEl.textContent = '\u00A0';
+            if (gameName === 'limbo') updateLimboUI();
             if (gameName === 'dice') updateDiceUI();
             if (gameName === 'keno') {
                 renderKenoBoard();
@@ -1345,9 +1443,8 @@
         // --- Lifetime Stats Logic ---
         function loadLifetimeStats() {
             const savedStats = localStorage.getItem('greedLifetimeStats');
-            const defaultGames = ['overall', 'crash', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
+            const defaultGames = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             if (savedStats) {
-                // Merge saved stats with defaults so older saved objects get new keys like 'slide'
                 lifetimeStats = JSON.parse(savedStats) || {};
                 defaultGames.forEach(gameKey => {
                     if (!lifetimeStats[gameKey]) lifetimeStats[gameKey] = createEmptyStats();
@@ -1356,6 +1453,7 @@
                 lifetimeStats = {
                     overall: createEmptyStats(),
                     crash: createEmptyStats(),
+                    limbo: createEmptyStats(),
                     mines: createEmptyStats(),
                     dice: createEmptyStats(),
                     blackjack: createEmptyStats(),
@@ -1370,7 +1468,7 @@
         }
 
         function updateLifetimeStats() {
-            const games = ['overall', 'crash', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
+            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
                 const life = lifetimeStats[gameKey];
@@ -1386,7 +1484,7 @@
 
         function renderLifetimeStatsModal() {
             lifetimeStatsTableBody.innerHTML = '';
-            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             games.forEach(gameKey => {
                 const stats = lifetimeStats[gameKey];
                 if (!stats) return;
@@ -1410,6 +1508,7 @@
             gameOverModal.classList.remove('flex');
         });
         diceSlider.addEventListener('input', updateDiceUI);
+        limboTargetInput.addEventListener('input', updateLimboUI);
         diceBetTypeBtn.addEventListener('click', () => {
             state.dice.betType = state.dice.betType === 'under' ? 'over' : 'under';
             updateDiceUI();
