@@ -382,6 +382,10 @@
         let crashLoopInterval = null;
         let pausedTime = 0;
         let timeAtPause = 0;
+        
+        // --- Constants ---
+        const BOMB_SVG = '<svg viewBox="0 0 24 24" fill="white" class="w-8 h-8"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"/><path d="M16,4.47a1,1,0,0,0-1.15-.83l-2.4,0.8a1,1,0,0,0-.8,1.15l0.8,2.4A1,1,0,0,0,14,8.82a1,1,0,0,0,.85-0.38l2-2A1,1,0,0,0,16,4.47Z"/></svg>';
+
 
         // --- Utility Functions ---
         const formatCurrency = (value, sign = true) => {
@@ -470,7 +474,6 @@
             if (elapsedSeconds > gracePeriod) {
                 tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
             }
-            // NEW: More aggressive firewall scaling with money
             if (state.maxCashReached > 1000000) {
                 tickRate *= 30;
             } else if (state.maxCashReached > 500000) {
@@ -660,7 +663,7 @@
             tile.classList.add('revealed');
             if (state.mines.grid[index] === 'mine') {
                 tile.classList.add('mine');
-                tile.innerHTML = '💣';
+                tile.innerHTML = BOMB_SVG;
                 handleLoss();
             } else {
                 tile.classList.add('gem');
@@ -669,9 +672,8 @@
                 const totalTiles = state.mines.rows * state.mines.cols;
                 const totalGems = totalTiles - state.mines.mineCount;
                 
-                // BUG FIX: Handle division by zero for 24 mines
                 if (totalGems - state.mines.gemsFound <= 0) {
-                    state.mines.payoutMultiplier = 25; // Assign a fixed high multiplier
+                    state.mines.payoutMultiplier = 25;
                 } else {
                     state.mines.payoutMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
                 }
@@ -686,7 +688,7 @@
              state.mines.grid.forEach((type, index) => {
                 if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
                     tiles[index].classList.add('revealed', 'mine');
-                    tiles[index].innerHTML = '�';
+                    tiles[index].innerHTML = BOMB_SVG;
                 }
              });
         }
@@ -901,7 +903,6 @@
         }
 
         function startKenoGame() {
-            // BUG FIX: Instantly re-render the board to clear previous results
             renderKenoBoard();
 
             if (state.keno.selectedNumbers.length === 0) {
@@ -947,7 +948,6 @@
                         handleLoss();
                     }
                     setTimeout(() => {
-                        // Don't auto-refresh here, wait for next bet
                         resetGameRound();
                         updateUI();
                     }, 2000);
@@ -1067,4 +1067,3 @@
     </script>
 </body>
 </html>
-�
