@@ -529,6 +529,7 @@
                 runStartTime: Date.now(),
                 gameInProgress: false,
                 currentBet: 0,
+                currentRoundBet: 0,
                 currentGame: 'crash',
                 crash: { multiplier: 1.00, crashPoint: 0, startTime: 0 },
                 limbo: { target: 2.00 },
@@ -624,12 +625,14 @@
                 return;
             }
             state.currentBet = betAmount;
+            state.currentRoundBet = betAmount; // lock the bet for this round to avoid race conditions
             state.currentCash -= betAmount;
             state.gameInProgress = true;
             gameMessageEl.textContent = `Bet of ${formatCurrency(betAmount, false)} placed.`;
             gameMessageEl.style.color = '#e2e8f0';
-            state.runStats.overall.wagered += betAmount;
-            state.runStats[state.currentGame].wagered += betAmount;
+            // record wagered against the locked round bet
+            state.runStats.overall.wagered += state.currentRoundBet;
+            state.runStats[state.currentGame].wagered += state.currentRoundBet;
             if (state.currentGame === 'crash') startCrashGame();
             if (state.currentGame === 'limbo') startLimboGame();
             if (state.currentGame === 'mines') startMinesGame();
@@ -644,10 +647,12 @@
             if (!state.gameInProgress) return;
             let winnings = 0;
             if (state.currentGame === 'crash') {
-                winnings = state.currentBet * state.crash.multiplier;
+                const roundBet = state.crash.roundBet || state.currentRoundBet;
+                winnings = roundBet * state.crash.multiplier;
                 gameMessageEl.textContent = `Cashed out for ${formatCurrency(winnings, false)}!`;
             } else if (state.currentGame === 'mines') {
-                winnings = state.currentBet * state.mines.payoutMultiplier;
+                const roundBet = state.mines.roundBet || state.currentRoundBet;
+                winnings = roundBet * state.mines.payoutMultiplier;
                 gameMessageEl.textContent = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
             }
             handleWin(winnings);
@@ -694,10 +699,15 @@
             clearTimeout(crashLoopInterval);
             state.gameInProgress = false;
             state.currentBet = 0;
+            state.currentRoundBet = 0;
             state.crash.multiplier = 1.00;
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
             state.blackjack.status = 'betting';
+            // clear per-game locked round bets
+            if (state.crash) state.crash.roundBet = 0;
+            if (state.mines) state.mines.roundBet = 0;
+            if (state.blackjack) state.blackjack.roundBet = 0;
         }
 
         function endRun(wasBust = false) {
@@ -797,6 +807,8 @@
         function startCrashGame() {
             state.crash.multiplier = 1.00;
             state.crash.startTime = Date.now();
+            // lock crash round bet locally on the crash state so async cashouts use the correct amount
+            state.crash.roundBet = state.currentRoundBet;
             const r = Math.random();
             state.crash.crashPoint = Math.max(1.01, 1 / (1 - r));
             gameMessageEl.textContent = "Multiplier increasing...";
@@ -873,11 +885,12 @@
                 gameMessageEl.textContent = "Invalid target multiplier.";
                 gameMessageEl.style.color = '#ef4444';
                 state.gameInProgress = false;
-                state.currentCash += state.currentBet;
+                state.currentCash += state.currentRoundBet;
                 return;
             }
 
             const result = 1 / (1 - Math.random());
+            const roundBet = state.currentRoundBet; // capture bet for this limbo round
             
             // Animation
             let currentDisplay = 1.00;
@@ -888,7 +901,7 @@
                 const elapsedTime = Date.now() - startTime;
                 if (elapsedTime >= animationDuration) {
                     limboResultDisplay.textContent = `${result.toFixed(2)}x`;
-                    finishLimboGame(result, target);
+                    finishLimboGame(result, target, roundBet);
                     return;
                 }
                 
@@ -906,10 +919,10 @@
             requestAnimationFrame(animateNumber);
         }
 
-        function finishLimboGame(result, target) {
+    function finishLimboGame(result, target, roundBet) {
             const won = result >= target;
             if (won) {
-                const winnings = state.currentBet * target;
+        const winnings = roundBet * target;
                 handleWin(winnings);
                 gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
@@ -935,12 +948,14 @@
                  gameMessageEl.textContent = "Invalid mine count (1-24).";
                  gameMessageEl.style.color = '#ef4444';
                  state.gameInProgress = false;
-                 state.currentCash += state.currentBet;
+                 state.currentCash += state.currentRoundBet;
                  return;
             }
             state.mines.mineCount = mineCount;
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
+            // lock mines round bet so cashouts use the correct value even if user acts fast
+            state.mines.roundBet = state.currentRoundBet;
             generateMinesGrid();
             renderMinesGrid();
             gameMessageEl.textContent = `Find the gems. Avoid the ${mineCount} mines.`;
@@ -1038,7 +1053,7 @@
             diceResultDisplay.textContent = roll;
             let won = (state.dice.betType === 'under' && roll < state.dice.target) || (state.dice.betType === 'over' && roll > state.dice.target);
             if (won) {
-                const winnings = state.currentBet * state.dice.multiplier;
+                const winnings = state.currentRoundBet * state.dice.multiplier;
                 handleWin(winnings);
                 gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
@@ -1099,9 +1114,11 @@
             state.blackjack.dealerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
             state.blackjack.status = 'playerTurn';
             renderBlackjackHands();
+            // lock blackjack round bet on the blackjack state for async resolution
+            state.blackjack.roundBet = state.currentRoundBet;
             const playerScore = calculateHandValue(state.blackjack.playerHand);
             if (playerScore === 21) {
-                const winnings = state.currentBet * 2.5; // 3:2 payout
+                const winnings = state.blackjack.roundBet * 2.5; // 3:2 payout
                 handleWin(winnings);
                 gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
                 setTimeout(resetGameRound, 1500);
@@ -1164,7 +1181,7 @@
             const playerScore = state.blackjack.playerScore;
             const dealerScore = state.blackjack.dealerScore;
             if (dealerScore > 21 || playerScore > dealerScore) {
-                const winnings = state.currentBet * 2;
+                const winnings = state.blackjack.roundBet * 2;
                 handleWin(winnings);
                 gameMessageEl.textContent = `You win ${formatCurrency(winnings, false)}!`;
             } else if (dealerScore > playerScore) {
@@ -1172,7 +1189,7 @@
                 handleLoss();
             } else {
                 gameMessageEl.textContent = 'Push.';
-                handleWin(state.currentBet); // Return original bet
+                handleWin(state.blackjack.roundBet); // Return original bet
             }
             setTimeout(resetGameRound, 2000);
             updateUI();
@@ -1238,7 +1255,7 @@
                 gameMessageEl.textContent = "Select at least one number.";
                 gameMessageEl.style.color = '#ef4444';
                 state.gameInProgress = false;
-                state.currentCash += state.currentBet;
+                state.currentCash += state.currentRoundBet;
                 return;
             }
 
@@ -1268,7 +1285,7 @@
                 if (i >= drawnNumbers.length) {
                     clearInterval(drawInterval);
                     if (payoutMultiplier > 0) {
-                        const winnings = state.currentBet * payoutMultiplier;
+                        const winnings = state.currentRoundBet * payoutMultiplier;
                         handleWin(winnings);
                         gameMessageEl.textContent = `You hit ${numHits} numbers and won ${formatCurrency(winnings, false)}!`;
                         gameMessageEl.style.color = '#4ade80';
@@ -1337,7 +1354,7 @@
             setTimeout(() => {
                 const multiplier = winningItem.m;
                 if (multiplier > 0) {
-                    const winnings = state.currentBet * multiplier;
+                    const winnings = state.currentRoundBet * multiplier;
                     handleWin(winnings);
                     gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                     gameMessageEl.style.color = '#4ade80';
