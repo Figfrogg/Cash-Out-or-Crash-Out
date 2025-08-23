@@ -755,11 +755,21 @@
                 const totalTiles = state.mines.rows * state.mines.cols;
                 const totalGems = totalTiles - state.mines.mineCount;
                 
+                // Compute base payout multiplier
+                let baseMultiplier;
                 if (totalGems - state.mines.gemsFound <= 0) {
-                    state.mines.payoutMultiplier = 25;
+                    baseMultiplier = 25;
                 } else {
-                    state.mines.payoutMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
+                    baseMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
                 }
+
+                // If player chose fewer than 5 mines, reduce payouts substantially
+                // to discourage low-mine easy bets. Apply a 75% penalty (keep 25%).
+                if (state.mines.mineCount < 5) {
+                    baseMultiplier = Math.max(0.1, baseMultiplier * 0.25);
+                }
+
+                state.mines.payoutMultiplier = baseMultiplier;
 
                 gameMessageEl.textContent = `Found ${state.mines.gemsFound} gems! Payout: ${state.mines.payoutMultiplier.toFixed(2)}x`;
             }
