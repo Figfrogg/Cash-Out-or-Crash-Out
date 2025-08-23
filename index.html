@@ -166,13 +166,56 @@
             background-color: #ef4444;
             opacity: 0.5;
         }
+        /* Slide Styles */
+        #slideReelContainer {
+            overflow: hidden;
+            position: relative;
+            height: 120px;
+            width: 100%;
+        }
+        #slideReel {
+            display: flex;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            transition: left 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .slide-item {
+            width: 100px;
+            height: 100px;
+            margin: 10px 5px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: white;
+        }
+        #slidePointer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background-color: white;
+            z-index: 10;
+        }
+        .risk-btn {
+             background-color: #334155;
+        }
+        .risk-btn.active {
+            background-color: #4f46e5;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-4xl mx-auto">
         <h1 class="text-4xl font-bold text-center mb-2 text-slate-200">GREED</h1>
-        <p class="text-center text-slate-400 mb-6">Survive the Firewall. Maximize your score.</p>
+        <p class="text-center text-slate-400 mb-6">Make Money Lose Money</p>
 
         <!-- Stats Display -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-center">
@@ -193,12 +236,13 @@
         <!-- Game Area -->
         <div id="gameArea" class="game-container p-6 rounded-lg shadow-lg hidden">
             <!-- Game Tabs -->
-            <div class="flex space-x-2 mb-4">
+            <div class="flex space-x-1 mb-4 text-xs md:text-base">
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn active" data-game="crash">Crash</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="mines">Mines</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="dice">Dice</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="slide">Slide</button>
             </div>
 
             <!-- Game Displays -->
@@ -242,6 +286,14 @@
                     <div id="kenoPayouts" class="w-full md:w-48 text-xs bg-slate-800 p-2 rounded"></div>
                 </div>
             </div>
+            <div id="slideGame" class="game-display hidden">
+                 <div class="flex flex-col items-center justify-center h-48 mb-6 bg-slate-900/50 rounded-lg border border-slate-700">
+                    <div id="slideReelContainer">
+                        <div id="slideReel"></div>
+                        <div id="slidePointer"></div>
+                    </div>
+                </div>
+            </div>
             
             <p id="gameMessage" class="text-lg text-center text-slate-400 mt-2 mb-4 h-8">&nbsp;</p>
 
@@ -260,6 +312,15 @@
                     <div id="blackjackControls" class="mt-2 hidden flex space-x-2">
                         <button id="hitBtn" class="w-full btn bg-yellow-500 text-slate-900 font-bold py-2 rounded-md">Hit</button>
                         <button id="standBtn" class="w-full btn bg-blue-500 text-white font-bold py-2 rounded-md">Stand</button>
+                    </div>
+                    <div id="slideControls" class="mt-2 hidden">
+                        <label class="block text-sm font-medium mb-1 text-slate-400">Risk Level</label>
+                        <div class="flex space-x-2">
+                            <button class="risk-btn btn flex-1 active" data-risk="easy">Easy</button>
+                            <button class="risk-btn btn flex-1" data-risk="medium">Medium</button>
+                            <button class="risk-btn btn flex-1" data-risk="hard">Hard</button>
+                            <button class="risk-btn btn flex-1" data-risk="expert">Expert</button>
+                        </div>
                     </div>
                 </div>
                 <div class="flex flex-col space-y-2">
@@ -390,6 +451,10 @@
         const lifetimeStatsModal = document.getElementById('lifetimeStatsModal');
         const closeLifetimeStatsBtn = document.getElementById('closeLifetimeStatsBtn');
         const lifetimeStatsTableBody = document.getElementById('lifetimeStatsTableBody');
+        const slideControls = document.getElementById('slideControls');
+        const slideReelContainer = document.getElementById('slideReelContainer');
+        const slideReel = document.getElementById('slideReel');
+        const slideRiskBtns = document.querySelectorAll('#slideControls .risk-btn');
 
         // --- Game State ---
         let state = {};
@@ -403,6 +468,12 @@
         
         // --- Constants ---
         const BOMB_SVG = '<svg viewBox="0 0 24 24" fill="white" class="w-8 h-8"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"/><path d="M16,4.47a1,1,0,0,0-1.15-.83l-2.4,0.8a1,1,0,0,0-.8,1.15l0.8,2.4A1,1,0,0,0,14,8.82a1,1,0,0,0,.85-0.38l2-2A1,1,0,0,0,16,4.47Z"/></svg>';
+        const SLIDE_MULTIPLIERS = {
+            easy:   [{m:0, w:30, c:'bg-slate-500'}, {m:0.1, w:20, c:'bg-slate-500'}, {m:0.2, w:15, c:'bg-slate-500'}, {m:0.5, w:10, c:'bg-green-500'}, {m:1.2, w:10, c:'bg-green-500'}, {m:1.5, w:8, c:'bg-blue-500'}, {m:2, w:7, c:'bg-blue-500'}],
+            medium: [{m:0, w:50, c:'bg-slate-500'}, {m:0.2, w:15, c:'bg-green-500'}, {m:0.5, w:10, c:'bg-green-500'}, {m:1.5, w:10, c:'bg-blue-500'}, {m:3, w:8, c:'bg-blue-500'}, {m:5, w:5, c:'bg-purple-600'}, {m:20, w:2, c:'bg-purple-600'}],
+            hard:   [{m:0, w:70, c:'bg-slate-500'}, {m:0.1, w:10, c:'bg-green-500'}, {m:2, w:8, c:'bg-blue-500'}, {m:5, w:5, c:'bg-purple-600'}, {m:10, w:4, c:'bg-purple-600'}, {m:25, w:2, c:'bg-yellow-500'}, {m:100, w:1, c:'bg-yellow-500'}],
+            expert: [{m:0, w:94, c:'bg-slate-500'}, {m:5, w:2, c:'bg-purple-600'}, {m:20, w:1.5, c:'bg-yellow-500'}, {m:100, w:1, c:'bg-yellow-500'}, {m:500, w:0.9, c:'bg-yellow-500'}, {m:2000, w:0.5, c:'bg-pink-500'}, {m:10000, w:0.1, c:'bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500'}]
+        };
 
 
         // --- Utility Functions ---
@@ -440,6 +511,7 @@
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
+                slide: { risk: 'easy' },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -448,6 +520,7 @@
                     dice: createEmptyStats(),
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
+                    slide: createEmptyStats(),
                 }
             };
             startScreen.classList.add('hidden');
@@ -489,20 +562,12 @@
             const elapsedSeconds = Math.floor((Date.now() - state.runStartTime - pausedTime) / 1000);
             let tickRate = 0.01;
             const gracePeriod = 30;
-            if (elapsedSeconds > gracePeriod) {
-                tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
-            }
-            if (state.maxCashReached > 1000000) {
-                tickRate *= 30;
-            } else if (state.maxCashReached > 500000) {
-                tickRate *= 15;
-            } else if (state.maxCashReached > 100000) {
-                tickRate *= 8;
-            } else if (state.maxCashReached > 50000) {
-                tickRate *= 4;
-            } else if (state.maxCashReached > 10000) {
-                tickRate *= 2;
-            }
+            if (elapsedSeconds > gracePeriod) tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
+            if (state.maxCashReached > 1000000) tickRate *= 30;
+            else if (state.maxCashReached > 500000) tickRate *= 15;
+            else if (state.maxCashReached > 100000) tickRate *= 8;
+            else if (state.maxCashReached > 50000) tickRate *= 4;
+            else if (state.maxCashReached > 10000) tickRate *= 2;
             state.firewallValue += tickRate;
         }
 
@@ -522,12 +587,10 @@
         function placeBet() {
             if (state.gameInProgress) return;
             let betAmount = parseFloat(betAmountInput.value);
-
             if (betAmount > state.currentCash) {
                 betAmount = state.currentCash;
                 betAmountInput.value = betAmount.toFixed(2);
             }
-
             if (isNaN(betAmount) || betAmount <= 0) {
                 gameMessageEl.textContent = "Invalid bet amount.";
                 gameMessageEl.style.color = '#ef4444';
@@ -545,6 +608,7 @@
             if (state.currentGame === 'dice') startDiceGame();
             if (state.currentGame === 'blackjack') startBlackjackGame();
             if (state.currentGame === 'keno') startKenoGame();
+            if (state.currentGame === 'slide') startSlideGame();
             updateUI();
         }
 
@@ -719,7 +783,7 @@
             else state.dice.winChance = 100 - state.dice.target;
             if (state.dice.winChance <= 0) state.dice.winChance = 0.01;
             if (state.dice.winChance >= 100) state.dice.winChance = 99.99;
-            const houseEdge = 0.975; // 2.5% house edge
+            const houseEdge = 0.975;
             state.dice.multiplier = (100 / state.dice.winChance) * houseEdge;
             diceMultiplierEl.textContent = `${state.dice.multiplier.toFixed(2)}x`;
             diceWinChanceEl.textContent = `${state.dice.winChance.toFixed(2)}%`;
@@ -974,6 +1038,73 @@
             }, 100);
         }
 
+        // --- Slide Logic ---
+        function startSlideGame() {
+            const risk = state.slide.risk;
+            const possibleOutcomes = SLIDE_MULTIPLIERS[risk];
+            const totalWeight = possibleOutcomes.reduce((sum, o) => sum + o.w, 0);
+
+            // Generate a reel of 50 items
+            const reelItems = [];
+            for (let i = 0; i < 50; i++) {
+                let random = Math.random() * totalWeight;
+                for (const outcome of possibleOutcomes) {
+                    if (random < outcome.w) {
+                        reelItems.push(outcome);
+                        break;
+                    }
+                    random -= outcome.w;
+                }
+            }
+            
+            // Pick a winning item (the one in the middle of the reel)
+            const winningItem = reelItems[25];
+            
+            // Render the reel
+            slideReel.innerHTML = '';
+            reelItems.forEach(item => {
+                const caseEl = document.createElement('div');
+                caseEl.classList.add('slide-item', item.c);
+                caseEl.textContent = `${item.m}x`;
+                slideReel.appendChild(caseEl);
+            });
+
+            // Animate the reel
+            const containerWidth = slideReelContainer.offsetWidth;
+            const itemWidth = 110; // 100px width + 10px margin
+            const targetPos = (containerWidth / 2) - (itemWidth / 2) - (25 * itemWidth);
+            
+            // Add some randomness to the final position
+            const randomOffset = (Math.random() - 0.5) * (itemWidth * 0.8);
+            
+            // Reset position without transition
+            slideReel.style.transition = 'none';
+            slideReel.style.left = '0px';
+
+            setTimeout(() => {
+                slideReel.style.transition = 'left 4s cubic-bezier(0.25, 0.1, 0.25, 1)';
+                slideReel.style.left = `${targetPos + randomOffset}px`;
+            }, 100);
+
+            // Handle result after animation
+            setTimeout(() => {
+                const multiplier = winningItem.m;
+                if (multiplier > 0) {
+                    const winnings = state.currentBet * multiplier;
+                    handleWin(winnings);
+                    gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
+                    gameMessageEl.style.color = '#4ade80';
+                } else {
+                    gameMessageEl.textContent = 'You lost.';
+                    gameMessageEl.style.color = '#ef4444';
+                    handleLoss();
+                }
+                resetGameRound();
+                updateUI();
+            }, 4500);
+        }
+
+
         // --- UI and Stats Logic ---
         function updateLiveStatsUI() {
             const { overall } = state.runStats;
@@ -988,7 +1119,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'overall'];
+            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -1028,7 +1159,7 @@
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
             firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
             placeBetBtn.disabled = state.gameInProgress;
-            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack', 'keno'].includes(state.currentGame);
+            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack', 'keno', 'slide'].includes(state.currentGame);
             betAmountInput.disabled = state.gameInProgress;
             mineCountInput.disabled = state.gameInProgress;
             diceSlider.disabled = state.gameInProgress;
@@ -1044,6 +1175,7 @@
             minesControls.classList.toggle('hidden', gameName !== 'mines');
             diceControls.classList.toggle('hidden', gameName !== 'dice');
             blackjackControls.classList.toggle('hidden', true);
+            slideControls.classList.toggle('hidden', gameName !== 'slide');
             gameMessageEl.textContent = '\u00A0';
             if (gameName === 'dice') updateDiceUI();
             if (gameName === 'keno') {
@@ -1066,6 +1198,7 @@
                     dice: createEmptyStats(),
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
+                    slide: createEmptyStats(),
                 };
             }
         }
@@ -1075,21 +1208,23 @@
         }
 
         function updateLifetimeStats() {
-            const games = ['overall', 'crash', 'mines', 'dice', 'blackjack', 'keno'];
+            const games = ['overall', 'crash', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
                 const life = lifetimeStats[gameKey];
-                life.wins += run.wins;
-                life.losses += run.losses;
-                life.wagered += run.wagered;
-                life.won += run.won;
+                if (run && life) {
+                    life.wins += run.wins;
+                    life.losses += run.losses;
+                    life.wagered += run.wagered;
+                    life.won += run.won;
+                }
             });
             saveLifetimeStats();
         }
 
         function renderLifetimeStatsModal() {
             lifetimeStatsTableBody.innerHTML = '';
-            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'overall'];
+            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             games.forEach(gameKey => {
                 const stats = lifetimeStats[gameKey];
                 if (!stats) return;
@@ -1139,6 +1274,15 @@
         closeLifetimeStatsBtn.addEventListener('click', () => {
             lifetimeStatsModal.classList.add('hidden');
             lifetimeStatsModal.classList.remove('flex');
+        });
+
+        slideRiskBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (state.gameInProgress) return;
+                state.slide.risk = btn.dataset.risk;
+                slideRiskBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
         });
 
         // Initial Load
