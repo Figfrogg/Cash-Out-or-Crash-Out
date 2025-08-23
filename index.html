@@ -500,7 +500,7 @@
         <div id="startScreen" class="text-center p-6 space-x-4 hidden">
              <div>
                  <button id="startRunBtn" class="btn btn-primary font-bold py-4 px-10 rounded-lg text-xl">Start New Run</button>
-                 <button id="lifetimeStatsBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-4 px-10 rounded-lg text-xl">Lifetime Stats</button>
+                 <button id="lifetimeStatsBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-4 px-10 rounded-lg text-xl">View Account</button>
              </div>
         </div>
     </div>
@@ -537,8 +537,12 @@
     <div id="lifetimeStatsModal" class="fixed inset-0 items-center justify-center hidden modal-backdrop p-4">
         <div class="stats-modal-content p-6 rounded-lg shadow-2xl w-full max-w-3xl mx-auto">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-3xl font-bold">Lifetime Statistics</h2>
+                <h2 class="text-3xl font-bold">Account</h2>
                 <button id="closeLifetimeStatsBtn" class="text-2xl font-bold">&times;</button>
+            </div>
+            <div id="accountDetails" class="mb-4">
+                <h3 class="font-semibold">Account Summary</h3>
+                <div id="accountSummaryBody" class="text-sm mt-2"></div>
             </div>
             <table class="stats-table text-sm">
                 <thead><tr><th>Game</th><th>W/L</th><th>Win Rate</th><th>Profit</th><th>Wagered</th></tr></thead>
@@ -629,10 +633,9 @@
         const autoStopOnLossInput = document.getElementById('autoStopOnLoss');
 
 
-        // --- Game State ---
-        let state = {};
-        let lifetimeStats = {};
-        let crashChart;
+    // --- Game State ---
+    let state = {};
+    let crashChart;
 
         // --- Timers and Intervals ---
         let runTimerInterval = null;
@@ -1643,38 +1646,25 @@
             });
         }
 
-        // --- Lifetime Stats Logic ---
-        function loadLifetimeStats() {
-            const savedStats = localStorage.getItem('greedLifetimeStats');
-            const defaultGames = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
-            if (savedStats) {
-                lifetimeStats = JSON.parse(savedStats) || {};
-                defaultGames.forEach(gameKey => {
-                    if (!lifetimeStats[gameKey]) lifetimeStats[gameKey] = createEmptyStats();
-                });
-            } else {
-                lifetimeStats = {};
-                defaultGames.forEach(gameKey => lifetimeStats[gameKey] = createEmptyStats());
-            }
-        }
-
-        function saveLifetimeStats() {
-            localStorage.setItem('greedLifetimeStats', JSON.stringify(lifetimeStats));
-        }
-
+        // Lifetime stats are stored per-account in state.account.lifetimeStats
         function updateLifetimeStats() {
+            // Persist run stats into the current account's lifetimeStats
+            if (!state.account || !state.account.username) return;
+            if (!state.account.lifetimeStats) state.account.lifetimeStats = {};
             const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
-                const life = lifetimeStats[gameKey];
-                if (run && life) {
-                    life.wins += run.wins;
-                    life.losses += run.losses;
-                    life.wagered += run.wagered;
-                    life.won += run.won;
-                }
+                if (!run) return;
+                if (!state.account.lifetimeStats[gameKey]) state.account.lifetimeStats[gameKey] = createEmptyStats();
+                const life = state.account.lifetimeStats[gameKey];
+                life.wins += run.wins;
+                life.losses += run.losses;
+                life.wagered += run.wagered;
+                life.won += run.won;
             });
-            saveLifetimeStats();
+            // also track totals on account
+            state.account.totalRuns = (state.account.totalRuns || 0) + 1;
+            saveAccount(state.account);
         }
 
         // --- Account & XP/Level System ---
@@ -1781,10 +1771,16 @@
 
         function renderLifetimeStatsModal() {
             lifetimeStatsTableBody.innerHTML = '';
+            if (!state.account || !state.account.username) {
+                document.getElementById('accountSummaryBody').textContent = 'Not logged in';
+                return;
+            }
+            const acct = state.account;
+            document.getElementById('accountSummaryBody').innerHTML = `<div>Username: <strong>${acct.username}</strong></div><div>Level: <strong>${acct.level || 0}</strong></div><div>XP: <strong>${acct.xp || 0}</strong></div><div>Total Runs: <strong>${acct.totalRuns || 0}</strong></div>`;
             const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
+            const lifeStats = acct.lifetimeStats || {};
             games.forEach(gameKey => {
-                const stats = lifetimeStats[gameKey];
-                if (!stats) return;
+                const stats = lifeStats[gameKey] || createEmptyStats();
                 const profit = stats.won - stats.wagered;
                 const totalBets = stats.wins + stats.losses;
                 const winRate = totalBets > 0 ? `${((stats.wins / totalBets) * 100).toFixed(2)}%` : 'N/A';
@@ -1902,6 +1898,7 @@
         standBtn.addEventListener('click', blackjackStand);
         
         lifetimeStatsBtn.addEventListener('click', () => {
+            pauseRun();
             renderLifetimeStatsModal();
             lifetimeStatsModal.classList.remove('hidden');
             lifetimeStatsModal.classList.add('flex');
@@ -1945,8 +1942,7 @@
         autoResetOnWin.addEventListener('click', () => autoOnWinValueInput.value = '' );
         autoResetOnLoss.addEventListener('click', () => autoOnLossValueInput.value = '' );
 
-        // Initial Load
-        loadLifetimeStats();
+    // Initial Load
         // Prefill last username in login box for convenience (do not auto-login)
         (function prefillLastAccount() {
             const last = localStorage.getItem('greed_last_account');
