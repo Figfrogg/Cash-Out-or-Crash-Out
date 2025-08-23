@@ -1212,8 +1212,13 @@
         // --- Lifetime Stats Logic ---
         function loadLifetimeStats() {
             const savedStats = localStorage.getItem('greedLifetimeStats');
+            const defaultGames = ['overall', 'crash', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             if (savedStats) {
-                lifetimeStats = JSON.parse(savedStats);
+                // Merge saved stats with defaults so older saved objects get new keys like 'slide'
+                lifetimeStats = JSON.parse(savedStats) || {};
+                defaultGames.forEach(gameKey => {
+                    if (!lifetimeStats[gameKey]) lifetimeStats[gameKey] = createEmptyStats();
+                });
             } else {
                 lifetimeStats = {
                     overall: createEmptyStats(),
