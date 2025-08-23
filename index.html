@@ -489,8 +489,15 @@
 
         function placeBet() {
             if (state.gameInProgress) return;
-            const betAmount = parseFloat(betAmountInput.value);
-            if (isNaN(betAmount) || betAmount <= 0 || betAmount > state.currentCash) {
+            let betAmount = parseFloat(betAmountInput.value);
+
+            // NEW FEATURE: Auto-adjust bet amount if it's too high
+            if (betAmount > state.currentCash) {
+                betAmount = state.currentCash;
+                betAmountInput.value = betAmount.toFixed(2); // Update the input field
+            }
+
+            if (isNaN(betAmount) || betAmount <= 0) {
                 gameMessageEl.textContent = "Invalid bet amount.";
                 gameMessageEl.style.color = '#ef4444';
                 return;
@@ -644,7 +651,7 @@
             tile.classList.add('revealed');
             if (state.mines.grid[index] === 'mine') {
                 tile.classList.add('mine');
-                tile.innerHTML = '�';
+                tile.innerHTML = '💣';
                 handleLoss();
             } else {
                 tile.classList.add('gem');
@@ -1044,4 +1051,3 @@
     </script>
 </body>
 </html>
-�
