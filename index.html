@@ -467,10 +467,21 @@
             const elapsedSeconds = Math.floor((Date.now() - state.runStartTime - pausedTime) / 1000);
             let tickRate = 0.01;
             const gracePeriod = 30;
-            if (elapsedSeconds > gracePeriod) tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
-            if (state.maxCashReached > 1000000) tickRate *= 5;
-            else if (state.maxCashReached > 100000) tickRate *= 3;
-            else if (state.maxCashReached > 10000) tickRate *= 1.5;
+            if (elapsedSeconds > gracePeriod) {
+                tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
+            }
+            // NEW: More aggressive firewall scaling with money
+            if (state.maxCashReached > 1000000) {
+                tickRate *= 30;
+            } else if (state.maxCashReached > 500000) {
+                tickRate *= 15;
+            } else if (state.maxCashReached > 100000) {
+                tickRate *= 8;
+            } else if (state.maxCashReached > 50000) {
+                tickRate *= 4;
+            } else if (state.maxCashReached > 10000) {
+                tickRate *= 2;
+            }
             state.firewallValue += tickRate;
         }
 
@@ -491,10 +502,9 @@
             if (state.gameInProgress) return;
             let betAmount = parseFloat(betAmountInput.value);
 
-            // NEW FEATURE: Auto-adjust bet amount if it's too high
             if (betAmount > state.currentCash) {
                 betAmount = state.currentCash;
-                betAmountInput.value = betAmount.toFixed(2); // Update the input field
+                betAmountInput.value = betAmount.toFixed(2);
             }
 
             if (isNaN(betAmount) || betAmount <= 0) {
@@ -597,7 +607,6 @@
             gameMessageEl.textContent = "Multiplier increasing...";
             crashLoopInterval = setInterval(() => {
                 if (!state.gameInProgress) { clearInterval(crashLoopInterval); return; }
-                // New exponential growth logic
                 state.crash.multiplier += 0.01 * Math.pow(1.015, state.crash.multiplier);
                 if (state.crash.multiplier >= state.crash.crashPoint) handleLoss();
                 updateUI();
@@ -659,7 +668,14 @@
                 state.mines.gemsFound++;
                 const totalTiles = state.mines.rows * state.mines.cols;
                 const totalGems = totalTiles - state.mines.mineCount;
-                state.mines.payoutMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
+                
+                // BUG FIX: Handle division by zero for 24 mines
+                if (totalGems - state.mines.gemsFound <= 0) {
+                    state.mines.payoutMultiplier = 25; // Assign a fixed high multiplier
+                } else {
+                    state.mines.payoutMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
+                }
+
                 gameMessageEl.textContent = `Found ${state.mines.gemsFound} gems! Payout: ${state.mines.payoutMultiplier.toFixed(2)}x`;
             }
             updateUI();
@@ -670,7 +686,7 @@
              state.mines.grid.forEach((type, index) => {
                 if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
                     tiles[index].classList.add('revealed', 'mine');
-                    tiles[index].innerHTML = '💣';
+                    tiles[index].innerHTML = '�';
                 }
              });
         }
@@ -1051,3 +1067,4 @@
     </script>
 </body>
 </html>
+�
