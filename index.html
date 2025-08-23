@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GREED</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         body {
@@ -57,9 +58,14 @@
             color: #e2e8f0;
         }
         .multiplier-display {
-            font-size: 4rem;
+            font-size: 3rem;
             font-weight: 900;
-            color: #f8fafc;
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            text-shadow: 0 0 10px rgba(0,0,0,0.7);
         }
         .game-tab {
             background-color: #334155;
@@ -247,8 +253,9 @@
 
             <!-- Game Displays -->
             <div id="crashGame" class="game-display">
-                <div class="flex flex-col items-center justify-center h-48 mb-6 bg-slate-900/50 rounded-lg border border-slate-700">
-                    <p id="multiplier" class="multiplier-display">1.00x</p>
+                <div class="relative flex flex-col items-center justify-center h-64 mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                    <canvas id="crashChart"></canvas>
+                    <p id="multiplier" class="multiplier-display text-slate-200">1.00x</p>
                 </div>
             </div>
             <div id="minesGame" class="game-display hidden">
@@ -437,7 +444,6 @@
         const diceResultDisplay = document.getElementById('diceResultDisplay');
         const statsGraphCanvas = document.getElementById('statsGraph');
         const statsGraphCtx = statsGraphCanvas.getContext('2d');
-        const statsTableBody = document.getElementById('statsTableBody');
         const blackjackControls = document.getElementById('blackjackControls');
         const hitBtn = document.getElementById('hitBtn');
         const standBtn = document.getElementById('standBtn');
@@ -455,10 +461,12 @@
         const slideReelContainer = document.getElementById('slideReelContainer');
         const slideReel = document.getElementById('slideReel');
         const slideRiskBtns = document.querySelectorAll('#slideControls .risk-btn');
+        const crashChartCanvas = document.getElementById('crashChart');
 
         // --- Game State ---
         let state = {};
         let lifetimeStats = {};
+        let crashChart;
 
         // --- Timers and Intervals ---
         let runTimerInterval = null;
@@ -506,7 +514,7 @@
                 gameInProgress: false,
                 currentBet: 0,
                 currentGame: 'crash',
-                crash: { multiplier: 1.00, crashPoint: 0 },
+                crash: { multiplier: 1.00, crashPoint: 0, startTime: 0 },
                 mines: { grid: [], rows: 5, cols: 5, mineCount: 5, gemsFound: 0, payoutMultiplier: 1.0 },
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
@@ -531,6 +539,7 @@
             startRunTimer();
             updateUI();
             updateLiveStatsUI();
+            initCrashChart();
         }
         
         function startRunTimer() {
@@ -644,7 +653,10 @@
         }
 
         function handleLoss() {
-            if (state.currentGame === 'crash') gameMessageEl.textContent = `Crashed at ${state.crash.crashPoint.toFixed(2)}x!`;
+            if (state.currentGame === 'crash') {
+                gameMessageEl.textContent = `Crashed at ${state.crash.crashPoint.toFixed(2)}x!`;
+                multiplierEl.classList.add('text-red-500');
+            }
             else if (state.currentGame === 'mines') {
                 gameMessageEl.textContent = `You hit a mine!`;
                 revealAllMines();
@@ -660,7 +672,7 @@
         }
         
         function resetGameRound() {
-            clearInterval(crashLoopInterval);
+            clearTimeout(crashLoopInterval);
             state.gameInProgress = false;
             state.currentBet = 0;
             state.crash.multiplier = 1.00;
@@ -672,7 +684,7 @@
         function endRun(wasBust = false) {
             state.runActive = false;
             clearInterval(runTimerInterval);
-            clearInterval(crashLoopInterval);
+            clearTimeout(crashLoopInterval);
             updateLifetimeStats();
             const score = wasBust ? 0 : state.currentCash;
             modalTitle.textContent = wasBust ? "Run Busted!" : "Run Complete!";
@@ -686,17 +698,142 @@
         }
 
         // --- Game Specific Logic ---
+        function createGradient(ctx, color) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+            gradient.addColorStop(0, `${color}50`); // ~30% opacity
+            gradient.addColorStop(1, `${color}00`); // 0% opacity
+            return gradient;
+        }
+
+        function initCrashChart() {
+            if (crashChart) {
+                crashChart.destroy();
+            }
+            const ctx = crashChartCanvas.getContext('2d');
+            crashChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        borderColor: '#e2e8f0',
+                        backgroundColor: createGradient(ctx, '#e2e8f0'),
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            grid: {
+                                display: false,
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    // Show label every second
+                                    if (parseFloat(label) % 1 === 0) {
+                                        return label + 's';
+                                    }
+                                    return '';
+                                },
+                                maxRotation: 0,
+                                minRotation: 0,
+                                autoSkip: false
+                            }
+                        },
+                        y: { 
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.5)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                callback: function(value) {
+                                    return value.toFixed(1) + 'x';
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    animation: {
+                        duration: 0
+                    }
+                }
+            });
+        }
+
         function startCrashGame() {
             state.crash.multiplier = 1.00;
+            state.crash.startTime = Date.now();
             const r = Math.random();
-            state.crash.crashPoint = 1 / (1 - r);
+            state.crash.crashPoint = Math.max(1.01, 1 / (1 - r));
             gameMessageEl.textContent = "Multiplier increasing...";
-            crashLoopInterval = setInterval(() => {
-                if (!state.gameInProgress) { clearInterval(crashLoopInterval); return; }
-                state.crash.multiplier += 0.01 * Math.pow(1.015, state.crash.multiplier);
-                if (state.crash.multiplier >= state.crash.crashPoint) handleLoss();
+
+            // Reset Chart
+            crashChart.data.labels = [0];
+            crashChart.data.datasets[0].data = [1];
+            crashChart.data.datasets[0].borderColor = '#e2e8f0';
+            crashChart.data.datasets[0].backgroundColor = createGradient(crashChart.ctx, '#e2e8f0');
+            multiplierEl.className = 'multiplier-display text-slate-200';
+            crashChart.update();
+
+            const runGameLoop = () => {
+                if (!state.gameInProgress) {
+                    return;
+                }
+                
+                const elapsedTime = (Date.now() - state.crash.startTime) / 1000;
+                state.crash.multiplier = Math.pow(1.07, elapsedTime);
+
+                // Update Chart Data
+                crashChart.data.labels.push(elapsedTime.toFixed(1));
+                crashChart.data.datasets[0].data.push(state.crash.multiplier);
+                
+                // Dynamic Color Change
+                let color = '#e2e8f0'; // slate-200
+                if (state.crash.multiplier >= 10) {
+                    color = '#ef4444'; // red-500
+                } else if (state.crash.multiplier >= 5) {
+                    color = '#f97316'; // orange-500
+                } else if (state.crash.multiplier >= 2) {
+                    color = '#eab308'; // yellow-500
+                }
+                crashChart.data.datasets[0].borderColor = color;
+                crashChart.data.datasets[0].backgroundColor = createGradient(crashChart.ctx, color);
+                multiplierEl.style.color = color;
+                
+                // Dynamically adjust y-axis
+                const suggestedMax = Math.max(1.5, Math.ceil(state.crash.multiplier / 5) * 5);
+                crashChart.options.scales.y.max = suggestedMax;
+
+                crashChart.update('none'); // Update without animation for performance
+
+                if (state.crash.multiplier >= state.crash.crashPoint) {
+                    handleLoss();
+                    return;
+                }
+                
+                // Speed up the interval
+                const intervalTime = Math.max(10, 100 - (state.crash.multiplier * 1.5));
+                crashLoopInterval = setTimeout(runGameLoop, intervalTime);
+                
                 updateUI();
-            }, 100);
+            };
+
+            runGameLoop();
         }
 
         function startMinesGame() {
@@ -777,13 +914,13 @@
         }
         
         function revealAllMines() {
-             const tiles = minesGridEl.children;
-             state.mines.grid.forEach((type, index) => {
-                if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
-                    tiles[index].classList.add('revealed', 'mine');
-                    tiles[index].innerHTML = BOMB_SVG;
-                }
-             });
+           const tiles = minesGridEl.children;
+           state.mines.grid.forEach((type, index) => {
+               if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
+                   tiles[index].classList.add('revealed', 'mine');
+                   tiles[index].innerHTML = BOMB_SVG;
+               }
+           });
         }
 
         function updateDiceUI() {
@@ -942,7 +1079,7 @@
                 handleLoss();
             } else {
                 gameMessageEl.textContent = 'Push.';
-                handleWin(state.currentBet);
+                handleWin(state.currentBet); // Return original bet
             }
             setTimeout(resetGameRound, 2000);
             updateUI();
@@ -1023,14 +1160,7 @@
             const numHits = hits.length;
             const numSelected = state.keno.selectedNumbers.length;
             const payoutsForSelection = KENO_PAYOUTS[numSelected] || {};
-            let payoutMultiplier = 0;
-            Object.keys(payoutsForSelection).forEach(k => {
-                const hitCount = parseInt(k, 10);
-                const mult = payoutsForSelection[k];
-                if (!isNaN(hitCount) && hitCount <= numHits) {
-                    payoutMultiplier += mult;
-                }
-            });
+            const payoutMultiplier = payoutsForSelection[numHits] || 0;
 
             let i = 0;
             const drawInterval = setInterval(() => {
@@ -1180,6 +1310,7 @@
         }
 
         function updateUI() {
+            if (!state.runActive) return;
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
             firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
             placeBetBtn.disabled = state.gameInProgress;
@@ -1188,7 +1319,9 @@
             mineCountInput.disabled = state.gameInProgress;
             diceSlider.disabled = state.gameInProgress;
             blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn');
-            if (state.currentGame === 'crash') multiplierEl.textContent = `${state.crash.multiplier.toFixed(2)}x`;
+            if (state.currentGame === 'crash') {
+                multiplierEl.textContent = `${state.crash.multiplier.toFixed(2)}x`;
+            }
         }
 
         function switchGame(gameName) {
@@ -1198,7 +1331,7 @@
             gameDisplays.forEach(display => display.classList.toggle('hidden', display.id !== `${gameName}Game`));
             minesControls.classList.toggle('hidden', gameName !== 'mines');
             diceControls.classList.toggle('hidden', gameName !== 'dice');
-            blackjackControls.classList.toggle('hidden', true);
+            blackjackControls.classList.toggle('hidden', true); // Always hide on switch
             slideControls.classList.toggle('hidden', gameName !== 'slide');
             gameMessageEl.textContent = '\u00A0';
             if (gameName === 'dice') updateDiceUI();
