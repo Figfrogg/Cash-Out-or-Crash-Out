@@ -752,7 +752,7 @@
             renderBlackjackHands();
             const playerScore = calculateHandValue(state.blackjack.playerHand);
             if (playerScore === 21) {
-                const winnings = state.currentBet * 2.5;
+                const winnings = state.currentBet * 2.5; // 3:2 payout
                 handleWin(winnings);
                 gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
                 setTimeout(resetGameRound, 1500);
@@ -877,6 +877,9 @@
         }
 
         function startKenoGame() {
+            // BUG FIX: Instantly re-render the board to clear previous results
+            renderKenoBoard();
+
             if (state.keno.selectedNumbers.length === 0) {
                 gameMessageEl.textContent = "Select at least one number.";
                 gameMessageEl.style.color = '#ef4444';
@@ -897,7 +900,6 @@
             const numSelected = state.keno.selectedNumbers.length;
             const payoutMultiplier = KENO_PAYOUTS[numSelected]?.[numHits] || 0;
 
-            // Animate draw
             let i = 0;
             const drawInterval = setInterval(() => {
                 const drawn = drawnNumbers[i];
@@ -910,7 +912,6 @@
                 i++;
                 if (i >= drawnNumbers.length) {
                     clearInterval(drawInterval);
-                    // End game
                     if (payoutMultiplier > 0) {
                         const winnings = state.currentBet * payoutMultiplier;
                         handleWin(winnings);
