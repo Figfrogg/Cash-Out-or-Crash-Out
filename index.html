@@ -141,6 +141,31 @@
             min-height: 100px;
             align-items: center;
         }
+        /* Keno Styles */
+        #kenoGrid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+        .keno-tile {
+            background-color: #475569;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-align: center;
+            padding: 4px 0;
+            font-size: 0.8rem;
+        }
+        .keno-tile.selected {
+            background-color: #4f46e5;
+        }
+        .keno-tile.hit {
+            background-color: #10b981;
+        }
+        .keno-tile.miss {
+            background-color: #ef4444;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -173,6 +198,7 @@
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="mines">Mines</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="dice">Dice</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
             </div>
 
             <!-- Game Displays -->
@@ -208,6 +234,12 @@
                         <h3 class="text-center font-bold">Your Hand (<span id="playerScore">0</span>)</h3>
                         <div id="playerHand" class="hand-container"></div>
                     </div>
+                </div>
+            </div>
+             <div id="kenoGame" class="game-display hidden">
+                <div class="flex flex-col md:flex-row items-start justify-center gap-4 h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                    <div id="kenoGrid" class="flex-grow"></div>
+                    <div id="kenoPayouts" class="w-full md:w-48 text-xs bg-slate-800 p-2 rounded"></div>
                 </div>
             </div>
             
@@ -330,8 +362,6 @@
         const statsGraphCanvas = document.getElementById('statsGraph');
         const statsGraphCtx = statsGraphCanvas.getContext('2d');
         const statsTableBody = document.getElementById('statsTableBody');
-
-        // Blackjack Elements
         const blackjackControls = document.getElementById('blackjackControls');
         const hitBtn = document.getElementById('hitBtn');
         const standBtn = document.getElementById('standBtn');
@@ -339,6 +369,10 @@
         const playerHandEl = document.getElementById('playerHand');
         const dealerScoreEl = document.getElementById('dealerScore');
         const playerScoreEl = document.getElementById('playerScore');
+        
+        // Keno Elements
+        const kenoGridEl = document.getElementById('kenoGrid');
+        const kenoPayoutsEl = document.getElementById('kenoPayouts');
 
         // --- Game State ---
         let state = {};
@@ -383,6 +417,7 @@
                 mines: { grid: [], rows: 5, cols: 5, mineCount: 5, gemsFound: 0, payoutMultiplier: 1.0 },
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
+                keno: { selectedNumbers: [] },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -390,6 +425,7 @@
                     mines: createEmptyStats(),
                     dice: createEmptyStats(),
                     blackjack: createEmptyStats(),
+                    keno: createEmptyStats(),
                 }
             };
             startScreen.classList.add('hidden');
@@ -470,6 +506,7 @@
             if (state.currentGame === 'mines') startMinesGame();
             if (state.currentGame === 'dice') startDiceGame();
             if (state.currentGame === 'blackjack') startBlackjackGame();
+            if (state.currentGame === 'keno') startKenoGame();
             updateUI();
         }
 
@@ -667,7 +704,6 @@
             updateUI();
         }
 
-        // --- Blackjack Logic ---
         function createDeck() {
             const suits = ['♥', '♦', '♣', '♠'];
             const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -713,14 +749,10 @@
             state.blackjack.playerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
             state.blackjack.dealerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
             state.blackjack.status = 'playerTurn';
-            
             renderBlackjackHands();
-
             const playerScore = calculateHandValue(state.blackjack.playerHand);
-            const dealerScore = calculateHandValue(state.blackjack.dealerHand);
-
             if (playerScore === 21) {
-                const winnings = state.currentBet * 2.5; // Blackjack pays 3:2
+                const winnings = state.currentBet * 2.5;
                 handleWin(winnings);
                 gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
                 setTimeout(resetGameRound, 1500);
@@ -731,11 +763,9 @@
         function renderBlackjackHands(revealDealerCard = false) {
             playerHandEl.innerHTML = '';
             dealerHandEl.innerHTML = '';
-
             state.blackjack.playerHand.forEach(card => {
                 playerHandEl.innerHTML += `<div class="card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}">${card.rank}${card.suit}</div>`;
             });
-
             state.blackjack.dealerHand.forEach((card, index) => {
                 if (index === 0 || revealDealerCard) {
                     dealerHandEl.innerHTML += `<div class="card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}">${card.rank}${card.suit}</div>`;
@@ -743,10 +773,8 @@
                     dealerHandEl.innerHTML += `<div class="card hidden"></div>`;
                 }
             });
-
             state.blackjack.playerScore = calculateHandValue(state.blackjack.playerHand);
             playerScoreEl.textContent = state.blackjack.playerScore;
-
             if (revealDealerCard) {
                 state.blackjack.dealerScore = calculateHandValue(state.blackjack.dealerHand);
                 dealerScoreEl.textContent = state.blackjack.dealerScore;
@@ -771,7 +799,6 @@
             if (state.blackjack.status !== 'playerTurn') return;
             state.blackjack.status = 'dealerTurn';
             renderBlackjackHands(true);
-            
             const dealerTurn = setInterval(() => {
                 if (state.blackjack.dealerScore < 17) {
                     state.blackjack.dealerHand.push(state.blackjack.deck.pop());
@@ -787,7 +814,6 @@
             renderBlackjackHands(true);
             const playerScore = state.blackjack.playerScore;
             const dealerScore = state.blackjack.dealerScore;
-
             if (dealerScore > 21 || playerScore > dealerScore) {
                 const winnings = state.currentBet * 2;
                 handleWin(winnings);
@@ -797,12 +823,112 @@
                 handleLoss();
             } else {
                 gameMessageEl.textContent = 'Push.';
-                handleWin(state.currentBet); // Return bet
+                handleWin(state.currentBet);
             }
             setTimeout(resetGameRound, 2000);
             updateUI();
         }
 
+        // --- Keno Logic ---
+        const KENO_PAYOUTS = {
+            1: { 1: 3.8 }, 2: { 2: 15 }, 3: { 2: 2, 3: 45 }, 4: { 2: 1, 3: 5, 4: 120 },
+            5: { 3: 2, 4: 20, 5: 450 }, 6: { 3: 1, 4: 10, 5: 100, 6: 1600 },
+            7: { 4: 5, 5: 40, 6: 400, 7: 5000 }, 8: { 4: 2, 5: 15, 6: 150, 7: 1500, 8: 10000 },
+            9: { 5: 10, 6: 80, 7: 800, 8: 4000, 9: 20000 }, 10: { 5: 5, 6: 40, 7: 200, 8: 1000, 9: 5000, 10: 50000 }
+        };
+
+        function renderKenoBoard() {
+            kenoGridEl.innerHTML = '';
+            for (let i = 1; i <= 40; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('keno-tile');
+                tile.textContent = i;
+                tile.dataset.number = i;
+                if (state.keno.selectedNumbers.includes(i)) {
+                    tile.classList.add('selected');
+                }
+                tile.addEventListener('click', () => onKenoTileClick(i));
+                kenoGridEl.appendChild(tile);
+            }
+        }
+
+        function onKenoTileClick(number) {
+            if (state.gameInProgress) return;
+            const { selectedNumbers } = state.keno;
+            const index = selectedNumbers.indexOf(number);
+            if (index > -1) {
+                selectedNumbers.splice(index, 1);
+            } else if (selectedNumbers.length < 10) {
+                selectedNumbers.push(number);
+            }
+            renderKenoBoard();
+            updateKenoPayouts();
+        }
+
+        function updateKenoPayouts() {
+            const numSelected = state.keno.selectedNumbers.length;
+            kenoPayoutsEl.innerHTML = `<h4 class="font-bold mb-1 text-center">Payouts (${numSelected} picks)</h4>`;
+            if (numSelected > 0) {
+                const payouts = KENO_PAYOUTS[numSelected];
+                for (const hits in payouts) {
+                    kenoPayoutsEl.innerHTML += `<div class="flex justify-between"><span>Hits: ${hits}</span><span class="font-semibold">${payouts[hits]}x</span></div>`;
+                }
+            }
+        }
+
+        function startKenoGame() {
+            if (state.keno.selectedNumbers.length === 0) {
+                gameMessageEl.textContent = "Select at least one number.";
+                gameMessageEl.style.color = '#ef4444';
+                state.gameInProgress = false;
+                state.currentCash += state.currentBet;
+                return;
+            }
+
+            const allNumbers = Array.from({ length: 40 }, (_, i) => i + 1);
+            const drawnNumbers = [];
+            for (let i = 0; i < 10; i++) {
+                const index = Math.floor(Math.random() * allNumbers.length);
+                drawnNumbers.push(allNumbers.splice(index, 1)[0]);
+            }
+
+            const hits = state.keno.selectedNumbers.filter(n => drawnNumbers.includes(n));
+            const numHits = hits.length;
+            const numSelected = state.keno.selectedNumbers.length;
+            const payoutMultiplier = KENO_PAYOUTS[numSelected]?.[numHits] || 0;
+
+            // Animate draw
+            let i = 0;
+            const drawInterval = setInterval(() => {
+                const drawn = drawnNumbers[i];
+                const tile = kenoGridEl.querySelector(`[data-number="${drawn}"]`);
+                if (hits.includes(drawn)) {
+                    tile.classList.add('hit');
+                } else {
+                    tile.classList.add('miss');
+                }
+                i++;
+                if (i >= drawnNumbers.length) {
+                    clearInterval(drawInterval);
+                    // End game
+                    if (payoutMultiplier > 0) {
+                        const winnings = state.currentBet * payoutMultiplier;
+                        handleWin(winnings);
+                        gameMessageEl.textContent = `You hit ${numHits} numbers and won ${formatCurrency(winnings, false)}!`;
+                        gameMessageEl.style.color = '#4ade80';
+                    } else {
+                        gameMessageEl.textContent = `You hit ${numHits} numbers and lost.`;
+                        gameMessageEl.style.color = '#ef4444';
+                        handleLoss();
+                    }
+                    setTimeout(() => {
+                        renderKenoBoard();
+                        resetGameRound();
+                        updateUI();
+                    }, 2000);
+                }
+            }, 100);
+        }
 
         // --- UI and Stats Logic ---
         function updateLiveStatsUI() {
@@ -818,9 +944,10 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'mines', 'dice', 'blackjack', 'overall'];
+            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
+                if (!stats) return;
                 const profit = stats.won - stats.wagered;
                 const totalBets = stats.wins + stats.losses;
                 const winRate = totalBets > 0 ? `${((stats.wins / totalBets) * 100).toFixed(2)}%` : 'N/A';
@@ -857,7 +984,7 @@
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
             firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
             placeBetBtn.disabled = state.gameInProgress;
-            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack'].includes(state.currentGame);
+            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack', 'keno'].includes(state.currentGame);
             betAmountInput.disabled = state.gameInProgress;
             mineCountInput.disabled = state.gameInProgress;
             diceSlider.disabled = state.gameInProgress;
@@ -872,9 +999,13 @@
             gameDisplays.forEach(display => display.classList.toggle('hidden', display.id !== `${gameName}Game`));
             minesControls.classList.toggle('hidden', gameName !== 'mines');
             diceControls.classList.toggle('hidden', gameName !== 'dice');
-            blackjackControls.classList.toggle('hidden', true); // Always hide on switch
+            blackjackControls.classList.toggle('hidden', true);
             gameMessageEl.textContent = '\u00A0';
             if (gameName === 'dice') updateDiceUI();
+            if (gameName === 'keno') {
+                renderKenoBoard();
+                updateKenoPayouts();
+            }
             updateUI();
         }
 
@@ -907,7 +1038,7 @@
         });
         hitBtn.addEventListener('click', blackjackHit);
         standBtn.addEventListener('click', blackjackStand);
-
+        
     </script>
 </body>
 </html>
