@@ -166,101 +166,6 @@
             background-color: #ef4444;
             opacity: 0.5;
         }
-        /* Packs Styles */
-        #packOpeningContainer {
-            min-height: 120px;
-        }
-        .pack {
-            width: 80px;
-            height: 110px;
-            background-color: #2563eb;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
-            color: white;
-            border: 2px solid #93c5fd;
-            box-shadow: 0 0 15px #2563eb;
-        }
-        .pack.opening {
-            animation: shake 0.5s ease-in-out, fadeOut 0.5s 0.5s ease-in-out forwards;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px) rotate(-5deg); }
-            75% { transform: translateX(5px) rotate(5deg); }
-        }
-        @keyframes fadeOut {
-            to { opacity: 0; transform: scale(0.5); }
-        }
-        #revealedCardsContainer {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            min-height: 120px;
-        }
-        .pack-card {
-            width: 80px;
-            height: 110px;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-            opacity: 0;
-            animation: fadeIn 0.5s ease-in-out forwards;
-        }
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-        /* Snakes Styles */
-        #snakesBoard {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-            gap: 8px;
-            width: 300px;
-            height: 300px;
-            margin: auto;
-        }
-        .snake-tile {
-            background-color: #475569;
-            border-radius: 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-        .snake-tile.active {
-            transform: scale(1.1);
-            border: 2px solid white;
-        }
-        .snake-tile .multiplier {
-            color: #4ade80;
-        }
-        .snake-tile .snake-icon {
-            width: 60%;
-            height: 60%;
-            fill: #ef4444;
-        }
-        #diceRollDisplay {
-            grid-column: 2 / 4;
-            grid-row: 2 / 4;
-            background-color: #0f172a;
-        }
-        .risk-btn {
-             background-color: #334155;
-        }
-        .risk-btn.active {
-            background-color: #4f46e5;
-        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -288,14 +193,12 @@
         <!-- Game Area -->
         <div id="gameArea" class="game-container p-6 rounded-lg shadow-lg hidden">
             <!-- Game Tabs -->
-            <div class="flex space-x-1 mb-4 text-xs md:text-base">
+            <div class="flex space-x-2 mb-4">
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn active" data-game="crash">Crash</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="mines">Mines</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="dice">Dice</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
-                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="packs">Packs</button>
-                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="snakes">Snakes</button>
             </div>
 
             <!-- Game Displays -->
@@ -339,17 +242,6 @@
                     <div id="kenoPayouts" class="w-full md:w-48 text-xs bg-slate-800 p-2 rounded"></div>
                 </div>
             </div>
-            <div id="packsGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-48 mb-6 bg-slate-900/50 rounded-lg border border-slate-700">
-                    <div id="packOpeningContainer" class="flex items-center justify-center"></div>
-                    <div id="revealedCardsContainer"></div>
-                </div>
-            </div>
-            <div id="snakesGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-auto mb-6 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
-                    <div id="snakesBoard"></div>
-                </div>
-            </div>
             
             <p id="gameMessage" class="text-lg text-center text-slate-400 mt-2 mb-4 h-8">&nbsp;</p>
 
@@ -368,14 +260,6 @@
                     <div id="blackjackControls" class="mt-2 hidden flex space-x-2">
                         <button id="hitBtn" class="w-full btn bg-yellow-500 text-slate-900 font-bold py-2 rounded-md">Hit</button>
                         <button id="standBtn" class="w-full btn bg-blue-500 text-white font-bold py-2 rounded-md">Stand</button>
-                    </div>
-                    <div id="snakesControls" class="mt-2 hidden">
-                        <label class="block text-sm font-medium mb-1 text-slate-400">Risk Level</label>
-                        <div class="flex space-x-2">
-                            <button class="risk-btn btn flex-1 active" data-risk="low">Low</button>
-                            <button class="risk-btn btn flex-1" data-risk="medium">Medium</button>
-                            <button class="risk-btn btn flex-1" data-risk="high">High</button>
-                        </div>
                     </div>
                 </div>
                 <div class="flex flex-col space-y-2">
@@ -485,13 +369,10 @@
         const playerHandEl = document.getElementById('playerHand');
         const dealerScoreEl = document.getElementById('dealerScore');
         const playerScoreEl = document.getElementById('playerScore');
+        
+        // Keno Elements
         const kenoGridEl = document.getElementById('kenoGrid');
         const kenoPayoutsEl = document.getElementById('kenoPayouts');
-        const packOpeningContainer = document.getElementById('packOpeningContainer');
-        const revealedCardsContainer = document.getElementById('revealedCardsContainer');
-        const snakesControls = document.getElementById('snakesControls');
-        const snakesBoardEl = document.getElementById('snakesBoard');
-        const snakesRiskBtns = document.querySelectorAll('#snakesControls .risk-btn');
 
         // --- Game State ---
         let state = {};
@@ -504,16 +385,6 @@
         
         // --- Constants ---
         const BOMB_SVG = '<svg viewBox="0 0 24 24" fill="white" class="w-8 h-8"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm0,18a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"/><path d="M16,4.47a1,1,0,0,0-1.15-.83l-2.4,0.8a1,1,0,0,0-.8,1.15l0.8,2.4A1,1,0,0,0,14,8.82a1,1,0,0,0,.85-0.38l2-2A1,1,0,0,0,16,4.47Z"/></svg>';
-        const SNAKE_SVG = '<svg viewBox="0 0 24 24" class="snake-icon"><path d="M14,4a2,2,0,1,0-2,2,2,2,0,0,0,2-2Zm-4,6a4,4,0,1,1,4-4,4,4,0,0,1-4,4Zm0-6a2,2,0,1,0,2,2,2,2,0,0,0-2-2Zm8,12v1a1,1,0,0,1-1,1H7a1,1,0,0,1-1-1V19a7,7,0,0,1,14,0Z"/></svg>';
-        const PACKS_RARITIES = [
-            { name: 'Common', weight: 75000, min_mult: 0.01, max_mult: 0.04, color: 'bg-slate-500', symbol: 'C' },
-            { name: 'Uncommon', weight: 20000, min_mult: 0.10, max_mult: 0.80, color: 'bg-green-500', symbol: 'U' },
-            { name: 'Rare', weight: 4000, min_mult: 1.00, max_mult: 15.00, color: 'bg-blue-500', symbol: 'R' },
-            { name: 'Epic', weight: 900, min_mult: 50.00, max_mult: 150.00, color: 'bg-purple-600', symbol: 'E' },
-            { name: 'Legendary', weight: 99, min_mult: 500, max_mult: 1000, color: 'bg-yellow-500', symbol: 'L' },
-            { name: 'Rainbow', weight: 1, min_mult: 10000, max_mult: 10000, color: 'bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500', symbol: 'S' }
-        ];
-        const TOTAL_PACK_WEIGHT = PACKS_RARITIES.reduce((sum, r) => sum + r.weight, 0);
 
 
         // --- Utility Functions ---
@@ -551,8 +422,6 @@
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
-                packs: { currentCards: [] },
-                snakes: { risk: 'low', board: [] },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -561,8 +430,6 @@
                     dice: createEmptyStats(),
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
-                    packs: createEmptyStats(),
-                    snakes: createEmptyStats(),
                 }
             };
             startScreen.classList.add('hidden');
@@ -604,12 +471,20 @@
             const elapsedSeconds = Math.floor((Date.now() - state.runStartTime - pausedTime) / 1000);
             let tickRate = 0.01;
             const gracePeriod = 30;
-            if (elapsedSeconds > gracePeriod) tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
-            if (state.maxCashReached > 1000000) tickRate *= 30;
-            else if (state.maxCashReached > 500000) tickRate *= 15;
-            else if (state.maxCashReached > 100000) tickRate *= 8;
-            else if (state.maxCashReached > 50000) tickRate *= 4;
-            else if (state.maxCashReached > 10000) tickRate *= 2;
+            if (elapsedSeconds > gracePeriod) {
+                tickRate *= (1 + (elapsedSeconds - gracePeriod) * 0.01);
+            }
+            if (state.maxCashReached > 1000000) {
+                tickRate *= 30;
+            } else if (state.maxCashReached > 500000) {
+                tickRate *= 15;
+            } else if (state.maxCashReached > 100000) {
+                tickRate *= 8;
+            } else if (state.maxCashReached > 50000) {
+                tickRate *= 4;
+            } else if (state.maxCashReached > 10000) {
+                tickRate *= 2;
+            }
             state.firewallValue += tickRate;
         }
 
@@ -629,10 +504,12 @@
         function placeBet() {
             if (state.gameInProgress) return;
             let betAmount = parseFloat(betAmountInput.value);
+
             if (betAmount > state.currentCash) {
                 betAmount = state.currentCash;
                 betAmountInput.value = betAmount.toFixed(2);
             }
+
             if (isNaN(betAmount) || betAmount <= 0) {
                 gameMessageEl.textContent = "Invalid bet amount.";
                 gameMessageEl.style.color = '#ef4444';
@@ -650,8 +527,6 @@
             if (state.currentGame === 'dice') startDiceGame();
             if (state.currentGame === 'blackjack') startBlackjackGame();
             if (state.currentGame === 'keno') startKenoGame();
-            if (state.currentGame === 'packs') startPacksGame();
-            if (state.currentGame === 'snakes') startSnakesGame();
             updateUI();
         }
 
@@ -1079,137 +954,6 @@
                 }
             }, 100);
         }
-        
-        // --- Packs Logic ---
-        function generateCard() {
-            let random = Math.random() * TOTAL_PACK_WEIGHT;
-            for (const rarity of PACKS_RARITIES) {
-                if (random < rarity.weight) {
-                    const multiplier = Math.random() * (rarity.max_mult - rarity.min_mult) + rarity.min_mult;
-                    return { ...rarity, multiplier };
-                }
-                random -= rarity.weight;
-            }
-        }
-
-        function startPacksGame() {
-            packOpeningContainer.innerHTML = '<div class="pack opening">?</div>';
-            revealedCardsContainer.innerHTML = '';
-            
-            setTimeout(() => {
-                packOpeningContainer.innerHTML = '';
-                state.packs.currentCards = Array.from({ length: 5 }, () => generateCard());
-                let totalMultiplier = 0;
-                
-                state.packs.currentCards.forEach((card, index) => {
-                    totalMultiplier += card.multiplier;
-                    setTimeout(() => {
-                        const cardEl = document.createElement('div');
-                        cardEl.classList.add('pack-card', card.color);
-                        cardEl.innerHTML = `<span class="text-2xl">${card.symbol}</span><span>${card.multiplier.toFixed(2)}x</span>`;
-                        revealedCardsContainer.appendChild(cardEl);
-                    }, index * 200);
-                });
-
-                setTimeout(() => {
-                    const winnings = state.currentBet * totalMultiplier;
-                    handleWin(winnings);
-                    gameMessageEl.textContent = `Total Multiplier: ${totalMultiplier.toFixed(2)}x. You won ${formatCurrency(winnings, false)}!`;
-                    gameMessageEl.style.color = '#4ade80';
-                    resetGameRound();
-                    updateUI();
-                }, 1500);
-
-            }, 1000);
-        }
-        
-        // --- Snakes Logic ---
-        const SNAKES_BOARDS = {
-            low:    [1.1, 1.2, 1.3, 1.4, 's', 1.6, 1.8, 's', 2.0, 1.5, 1.3, 2.0],
-            medium: [1.2, 1.4, 's', 1.8, 's', 's', 's', 4.0, 1.1, 6.0, 8.0, 10.0],
-            high:   ['s', 's', 's', 's', 25.0, 's', 's', 's', 's', 's', 25.0, 's']
-        };
-        const SNAKE_TILE_POSITIONS = [
-            { row: 1, col: 1 }, { row: 1, col: 2 }, { row: 1, col: 3 }, { row: 1, col: 4 },
-            { row: 2, col: 4 }, { row: 3, col: 4 }, { row: 4, col: 4 }, { row: 4, col: 3 },
-            { row: 4, col: 2 }, { row: 4, col: 1 }, { row: 3, col: 1 }, { row: 2, col: 1 }
-        ];
-
-        function renderSnakesBoard() {
-            const boardLayout = SNAKES_BOARDS[state.snakes.risk];
-            state.snakes.board = boardLayout;
-            snakesBoardEl.innerHTML = ''; // Clear previous board
-            
-            // Add outer tiles
-            boardLayout.forEach((tile, index) => {
-                const pos = SNAKE_TILE_POSITIONS[index];
-                const tileEl = document.createElement('div');
-                tileEl.classList.add('snake-tile');
-                tileEl.dataset.index = index;
-                tileEl.style.gridRow = pos.row;
-                tileEl.style.gridColumn = pos.col;
-
-                if (tile === 's') {
-                    tileEl.innerHTML = SNAKE_SVG;
-                } else {
-                    tileEl.innerHTML = `<span class="multiplier">${tile.toFixed(2)}x</span>`;
-                }
-                snakesBoardEl.appendChild(tileEl);
-            });
-
-            // Add central display
-            const centralDisplay = document.createElement('div');
-            centralDisplay.id = 'diceRollDisplay';
-            centralDisplay.classList.add('snake-tile', 'text-2xl', 'font-bold');
-            centralDisplay.textContent = 'Roll the dice!';
-            snakesBoardEl.appendChild(centralDisplay);
-        }
-
-        function startSnakesGame() {
-            renderSnakesBoard(); // Clear previous highlights
-            const roll1 = Math.floor(Math.random() * 6) + 1;
-            const roll2 = Math.floor(Math.random() * 6) + 1;
-            const totalRoll = roll1 + roll2;
-            
-            const diceDisplay = snakesBoardEl.querySelector('#diceRollDisplay');
-            diceDisplay.textContent = `Rolled a ${totalRoll}`;
-            
-            let currentPos = -1;
-            const moveInterval = setInterval(() => {
-                currentPos++;
-                
-                const tiles = snakesBoardEl.querySelectorAll('.snake-tile:not(#diceRollDisplay)');
-                if (currentPos > 0) {
-                    tiles[(currentPos - 1) % 12].classList.remove('active');
-                }
-                
-                tiles[currentPos % 12].classList.add('active');
-
-                if (currentPos >= totalRoll - 1) {
-                    clearInterval(moveInterval);
-                    endSnakesHand(totalRoll - 1);
-                }
-            }, 150);
-        }
-
-        function endSnakesHand(finalPos) {
-            const finalTile = state.snakes.board[finalPos % 12];
-            if (finalTile === 's') {
-                gameMessageEl.textContent = 'You landed on a snake!';
-                gameMessageEl.style.color = '#ef4444';
-                handleLoss();
-            } else {
-                const winnings = state.currentBet * finalTile;
-                handleWin(winnings);
-                gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
-                gameMessageEl.style.color = '#4ade80';
-            }
-            setTimeout(() => {
-                resetGameRound();
-                updateUI();
-            }, 2000);
-        }
-
 
         // --- UI and Stats Logic ---
         function updateLiveStatsUI() {
@@ -1225,7 +969,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'packs', 'snakes', 'overall'];
+            const games = ['crash', 'mines', 'dice', 'blackjack', 'keno', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -1265,7 +1009,7 @@
             currentCashEl.textContent = formatCurrency(state.currentCash, false);
             firewallValueEl.textContent = formatCurrency(state.firewallValue, false);
             placeBetBtn.disabled = state.gameInProgress;
-            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack', 'keno', 'packs', 'snakes'].includes(state.currentGame);
+            cashOutBtn.disabled = !state.gameInProgress || ['dice', 'blackjack', 'keno'].includes(state.currentGame);
             betAmountInput.disabled = state.gameInProgress;
             mineCountInput.disabled = state.gameInProgress;
             diceSlider.disabled = state.gameInProgress;
@@ -1281,19 +1025,11 @@
             minesControls.classList.toggle('hidden', gameName !== 'mines');
             diceControls.classList.toggle('hidden', gameName !== 'dice');
             blackjackControls.classList.toggle('hidden', true);
-            snakesControls.classList.toggle('hidden', gameName !== 'snakes');
             gameMessageEl.textContent = '\u00A0';
             if (gameName === 'dice') updateDiceUI();
             if (gameName === 'keno') {
                 renderKenoBoard();
                 updateKenoPayouts();
-            }
-            if (gameName === 'packs') {
-                 packOpeningContainer.innerHTML = '<div class="pack">?</div>';
-                 revealedCardsContainer.innerHTML = '';
-            }
-            if (gameName === 'snakes') {
-                renderSnakesBoard();
             }
             updateUI();
         }
@@ -1327,15 +1063,6 @@
         });
         hitBtn.addEventListener('click', blackjackHit);
         standBtn.addEventListener('click', blackjackStand);
-        snakesRiskBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (state.gameInProgress) return;
-                state.snakes.risk = btn.dataset.risk;
-                snakesRiskBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                renderSnakesBoard();
-            });
-        });
         
     </script>
 </body>
