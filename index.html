@@ -702,6 +702,29 @@
                 osc.stop(audioContext.currentTime + 0.05);
             },
 
+            // Generate a ticking sound for Crash game
+            playCrashTick(multiplier) {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'triangle'; // Softer than sine
+                
+                // Pitch increases slightly with multiplier
+                const baseFreq = 500 + Math.min(800, multiplier * 15);
+                osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.06, audioContext.currentTime + 0.005);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.06);
+                
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.06);
+            },
+
             // Generate a level up celebration sound
             playLevelUp() {
                 if (!this.enabled) return;
@@ -1205,6 +1228,9 @@
                 
                 const elapsedTime = (Date.now() - state.crash.startTime) / 1000;
                 state.crash.multiplier = Math.pow(1.07, elapsedTime);
+                
+                // Play the tick sound on each loop iteration
+                soundSystem.playCrashTick(state.crash.multiplier);
 
                 crashChart.data.labels.push(elapsedTime.toFixed(1));
                 crashChart.data.datasets[0].data.push(state.crash.multiplier);
