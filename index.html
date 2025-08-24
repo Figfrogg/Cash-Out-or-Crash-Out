@@ -1128,6 +1128,7 @@
              <div class="mt-6 flex justify-center space-x-4">
                 <button id="soundToggleBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-3 px-6 rounded-md">🔊 Sound On</button>
                 <button id="viewStatsBtn" class="btn bg-indigo-600 hover:bg-indigo-700 font-bold py-3 px-8 rounded-md">View Stats</button>
+                <button id="helpBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-3 px-8 rounded-md">❓ Help</button>
                 <button id="endRunBtn" class="btn btn-danger font-bold py-3 px-8 rounded-md">End Run</button>
             </div>
             
@@ -1212,6 +1213,172 @@
                 <thead><tr><th>Game</th><th>W/L</th><th>Win Rate</th><th>Profit</th><th>Wagered</th></tr></thead>
                 <tbody id="lifetimeStatsTableBody"></tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 items-center justify-center hidden modal-backdrop p-4">
+        <div class="stats-modal-content p-6 rounded-lg shadow-2xl w-full max-w-4xl mx-auto max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-3xl font-bold">Help & Instructions</h2>
+                <button id="closeHelpBtn" class="text-2xl font-bold">&times;</button>
+            </div>
+            
+            <!-- Hotkeys Section -->
+            <div class="mb-6">
+                <h3 class="text-xl font-bold mb-3 text-green-400">🎮 Hotkeys</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-800 p-3 rounded-md">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-300">Place Bet</span>
+                            <span class="bg-slate-700 px-2 py-1 rounded text-sm font-mono">SPACE</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-3 rounded-md">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-300">Cash Out</span>
+                            <span class="bg-slate-700 px-2 py-1 rounded text-sm font-mono">CTRL</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Games Section -->
+            <div class="space-y-6">
+                <h3 class="text-xl font-bold mb-3 text-blue-400">🎲 Games</h3>
+                
+                <!-- Crash -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-green-400 mb-2">🚀 Crash</h4>
+                    <p class="text-sm text-slate-300 mb-2">Watch the multiplier increase and cash out before it crashes!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Place a bet and watch the multiplier grow</li>
+                        <li>• Cash out anytime to secure your winnings</li>
+                        <li>• If you don't cash out before the crash, you lose your bet</li>
+                        <li>• Higher multipliers = bigger risk and reward</li>
+                    </ul>
+                </div>
+
+                <!-- Limbo -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-blue-400 mb-2">🎯 Limbo</h4>
+                    <p class="text-sm text-slate-300 mb-2">Set a target multiplier and try to beat it!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Set your target multiplier (e.g., 2.00x)</li>
+                        <li>• If the result is higher than your target, you win</li>
+                        <li>• Higher targets = lower win chance but bigger payouts</li>
+                        <li>• Lower targets = higher win chance but smaller payouts</li>
+                    </ul>
+                </div>
+
+                <!-- Mines -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-yellow-400 mb-2">💎 Mines</h4>
+                    <p class="text-sm text-slate-300 mb-2">Find gems while avoiding mines!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Choose how many mines to place (1-24)</li>
+                        <li>• Click tiles to reveal gems or mines</li>
+                        <li>• Cash out anytime to secure your winnings</li>
+                        <li>• More mines = higher risk but bigger payouts</li>
+                        <li>• 20+ mines give MASSIVE payouts!</li>
+                    </ul>
+                </div>
+
+                <!-- Dice -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-purple-400 mb-2">🎲 Dice</h4>
+                    <p class="text-sm text-slate-300 mb-2">Roll under or over a target number!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Choose to roll "under" or "over" a target</li>
+                        <li>• Adjust the slider to set your target (1-9999)</li>
+                        <li>• Lower targets = higher win chance but smaller payouts</li>
+                        <li>• Higher targets = lower win chance but bigger payouts</li>
+                    </ul>
+                </div>
+
+                <!-- Blackjack -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-green-400 mb-2">🃏 Blackjack</h4>
+                    <p class="text-sm text-slate-300 mb-2">Beat the dealer to 21 without going over!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Get as close to 21 as possible without going over</li>
+                        <li>• Face cards (J, Q, K) = 10, Ace = 1 or 11</li>
+                        <li>• Hit to draw another card</li>
+                        <li>• Stand to keep your current hand</li>
+                        <li>• Beat the dealer's hand to win</li>
+                        <li>• Blackjack (21) pays 2.5x</li>
+                    </ul>
+                </div>
+
+                <!-- HiLo -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-red-400 mb-2">📈 HiLo</h4>
+                    <p class="text-sm text-slate-300 mb-2">Guess if the next card is higher or lower!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Draw a card to start</li>
+                        <li>• Guess if the next card will be higher or lower</li>
+                        <li>• Card values: A=1, 2-10=face value, J=11, Q=12, K=13</li>
+                        <li>• Correct guesses increase your multiplier</li>
+                        <li>• Cash out anytime to secure your winnings</li>
+                        <li>• Wrong guess = lose everything</li>
+                    </ul>
+                </div>
+
+                <!-- Keno -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-pink-400 mb-2">🎱 Keno</h4>
+                    <p class="text-sm text-slate-300 mb-2">Pick numbers and hope they get drawn!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Select 1-10 numbers from the grid</li>
+                        <li>• Click "Place Bet" to start the draw</li>
+                        <li>• More matching numbers = bigger payouts</li>
+                        <li>• Payout table shows rewards for different matches</li>
+                        <li>• Higher risk = higher potential rewards</li>
+                    </ul>
+                </div>
+
+                <!-- Slide -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-cyan-400 mb-2">🎰 Slide</h4>
+                    <p class="text-sm text-slate-300 mb-2">Watch the reel slide and hope it lands on a good multiplier!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Choose your risk level (Easy, Medium, Hard, Expert)</li>
+                        <li>• Watch the reel slide across the screen</li>
+                        <li>• Where it stops determines your multiplier</li>
+                        <li>• Higher risk levels = bigger potential payouts</li>
+                        <li>• Expert mode has the highest risk and reward</li>
+                    </ul>
+                </div>
+
+                <!-- Diamonds -->
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <h4 class="text-lg font-bold text-indigo-400 mb-2">💎 Diamonds</h4>
+                    <p class="text-sm text-slate-300 mb-2">Match colored diamonds for payouts!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Click "Play" to draw 5 diamonds</li>
+                        <li>• Match diamonds by color for payouts</li>
+                        <li>• More matches = bigger payouts</li>
+                        <li>• 5 of a kind = 50x payout!</li>
+                        <li>• Payout table shows all possible combinations</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Auto Bet Section -->
+            <div class="mt-6">
+                <h3 class="text-xl font-bold mb-3 text-orange-400">🤖 Auto Bet</h3>
+                <div class="bg-slate-800 p-4 rounded-md">
+                    <p class="text-sm text-slate-300 mb-2">Automate your betting with advanced strategies!</p>
+                    <ul class="text-xs text-slate-400 space-y-1">
+                        <li>• Set base bet amount and number of bets</li>
+                        <li>• Configure win/loss actions (reset, increase, decrease, multiply)</li>
+                        <li>• Set stop conditions (profit, loss, streaks)</li>
+                        <li>• Adjust delay between bets</li>
+                        <li>• Real-time status display shows progress</li>
+                        <li>• Perfect for implementing betting strategies</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -4315,6 +4482,23 @@
         closeLifetimeStatsBtn.addEventListener('click', () => {
             lifetimeStatsModal.classList.add('hidden');
             lifetimeStatsModal.classList.remove('flex');
+        });
+
+        // Help modal event listeners
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+        helpBtn.addEventListener('click', () => {
+            pauseRun();
+            helpModal.classList.remove('hidden');
+            helpModal.classList.add('flex');
+        });
+
+        closeHelpBtn.addEventListener('click', () => {
+            resumeRun();
+            helpModal.classList.add('hidden');
+            helpModal.classList.remove('flex');
         });
 
         slideRiskBtns.forEach(btn => {
