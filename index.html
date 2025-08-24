@@ -1027,48 +1027,101 @@
 
                 <!-- Auto Bet Controls -->
                 <div id="autoBetControls" class="hidden">
-                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <!-- Column 1: Core Settings -->
                         <div class="space-y-3">
-                             <div>
+                            <div>
                                 <label for="autoBetAmount" class="block text-xs font-medium mb-1 text-slate-400">Base Bet</label>
-                                <input type="number" id="autoBetAmount" value="1.00" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                                <input type="number" id="autoBetAmount" value="1.00" step="0.01" min="0.01" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
                             </div>
-                             <div>
-                                <label for="autoNumBets" class="block text-xs font-medium mb-1 text-slate-400">Number of Bets (0=inf)</label>
+                            <div>
+                                <label for="autoNumBets" class="block text-xs font-medium mb-1 text-slate-400">Number of Bets</label>
                                 <input type="number" id="autoNumBets" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                                <div class="text-xs text-slate-500">0 = Infinite</div>
+                            </div>
+                            <div>
+                                <label for="autoDelay" class="block text-xs font-medium mb-1 text-slate-400">Delay (ms)</label>
+                                <input type="number" id="autoDelay" value="1000" min="100" step="100" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
                             </div>
                         </div>
-                        <!-- Column 2: Win/Loss Actions -->
+                        
+                        <!-- Column 2: Win Actions -->
                         <div class="space-y-3">
                             <div>
-                                <label for="autoOnWin" class="block text-xs font-medium mb-1 text-slate-400">On Win: Increase By (%)</label>
-                                <div class="flex items-center">
-                                    <input type="number" id="autoOnWinValue" value="0" class="input-field w-full p-2 rounded-l-md shadow-inner text-sm">
-                                    <button id="autoResetOnWin" class="btn bg-slate-600 px-3 py-2 text-xs rounded-r-md">Reset</button>
-                                </div>
+                                <label class="block text-xs font-medium mb-1 text-slate-400">On Win</label>
+                                <select id="autoOnWinAction" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                                    <option value="reset">Reset to Base</option>
+                                    <option value="increase">Increase by %</option>
+                                    <option value="decrease">Decrease by %</option>
+                                    <option value="multiply">Multiply by</option>
+                                </select>
                             </div>
-                             <div>
-                                <label for="autoOnLoss" class="block text-xs font-medium mb-1 text-slate-400">On Loss: Increase By (%)</label>
-                                 <div class="flex items-center">
-                                    <input type="number" id="autoOnLossValue" value="100" class="input-field w-full p-2 rounded-l-md shadow-inner text-sm">
-                                    <button id="autoResetOnLoss" class="btn bg-slate-600 px-3 py-2 text-xs rounded-r-md">Reset</button>
-                                </div>
+                            <div>
+                                <label for="autoOnWinValue" class="block text-xs font-medium mb-1 text-slate-400">Win Value</label>
+                                <input type="number" id="autoOnWinValue" value="0" step="0.1" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                            <div>
+                                <label for="autoStopOnWinStreak" class="block text-xs font-medium mb-1 text-slate-400">Stop on Win Streak</label>
+                                <input type="number" id="autoStopOnWinStreak" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
                             </div>
                         </div>
-                         <!-- Column 3: Limits & Action -->
-                        <div class="space-y-3 flex flex-col">
-                             <div>
-                                <label for="autoStopOnProfit" class="block text-xs font-medium mb-1 text-slate-400">Stop on Profit ($)</label>
-                                <input type="number" id="autoStopOnProfit" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                        
+                        <!-- Column 3: Loss Actions -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-slate-400">On Loss</label>
+                                <select id="autoOnLossAction" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                                    <option value="reset">Reset to Base</option>
+                                    <option value="increase" selected>Increase by %</option>
+                                    <option value="decrease">Decrease by %</option>
+                                    <option value="multiply">Multiply by</option>
+                                </select>
                             </div>
-                             <div>
-                                <label for="autoStopOnLoss" class="block text-xs font-medium mb-1 text-slate-400">Stop on Loss ($)</label>
-                                <input type="number" id="autoStopOnLoss" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            <div>
+                                <label for="autoOnLossValue" class="block text-xs font-medium mb-1 text-slate-400">Loss Value</label>
+                                <input type="number" id="autoOnLossValue" value="100" step="0.1" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                            <div>
+                                <label for="autoStopOnLossStreak" class="block text-xs font-medium mb-1 text-slate-400">Stop on Loss Streak</label>
+                                <input type="number" id="autoStopOnLossStreak" value="0" min="0" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                        </div>
+                        
+                        <!-- Column 4: Limits & Action -->
+                        <div class="space-y-3 flex flex-col">
+                            <div>
+                                <label for="autoStopOnProfit" class="block text-xs font-medium mb-1 text-slate-400">Stop on Profit</label>
+                                <input type="number" id="autoStopOnProfit" value="0" min="0" step="0.01" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                            <div>
+                                <label for="autoStopOnLoss" class="block text-xs font-medium mb-1 text-slate-400">Stop on Loss</label>
+                                <input type="number" id="autoStopOnLoss" value="0" min="0" step="0.01" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
+                            </div>
+                            <div>
+                                <label for="autoMaxBet" class="block text-xs font-medium mb-1 text-slate-400">Max Bet</label>
+                                <input type="number" id="autoMaxBet" value="0" min="0" step="0.01" class="input-field w-full p-2 rounded-md shadow-inner text-sm">
                             </div>
                             <button id="startAutoBetBtn" class="w-full btn btn-primary font-bold py-2 rounded-md mt-auto">Start Auto Bet</button>
                         </div>
-                     </div>
+                    </div>
+                    
+                    <!-- Auto Bet Status -->
+                    <div id="autoBetStatus" class="mt-4 p-3 bg-slate-800 rounded-md hidden">
+                        <div class="flex justify-between items-center text-sm">
+                            <div>
+                                <span class="text-slate-400">Bets Made:</span>
+                                <span id="autoBetsMade" class="font-bold text-white">0</span>
+                                <span class="text-slate-400 ml-4">Current Bet:</span>
+                                <span id="autoCurrentBet" class="font-bold text-white">$0.00</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400">Win Streak:</span>
+                                <span id="autoWinStreak" class="font-bold text-green-400">0</span>
+                                <span class="text-slate-400 ml-4">Loss Streak:</span>
+                                <span id="autoLossStreak" class="font-bold text-red-400">0</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1673,12 +1726,21 @@
         const startAutoBetBtn = document.getElementById('startAutoBetBtn');
         const autoBetAmountInput = document.getElementById('autoBetAmount');
         const autoNumBetsInput = document.getElementById('autoNumBets');
+        const autoDelayInput = document.getElementById('autoDelay');
+        const autoOnWinActionSelect = document.getElementById('autoOnWinAction');
         const autoOnWinValueInput = document.getElementById('autoOnWinValue');
-        const autoResetOnWinBtn = document.getElementById('autoResetOnWin');
+        const autoOnLossActionSelect = document.getElementById('autoOnLossAction');
         const autoOnLossValueInput = document.getElementById('autoOnLossValue');
-        const autoResetOnLossBtn = document.getElementById('autoResetOnLoss');
         const autoStopOnProfitInput = document.getElementById('autoStopOnProfit');
         const autoStopOnLossInput = document.getElementById('autoStopOnLoss');
+        const autoStopOnWinStreakInput = document.getElementById('autoStopOnWinStreak');
+        const autoStopOnLossStreakInput = document.getElementById('autoStopOnLossStreak');
+        const autoMaxBetInput = document.getElementById('autoMaxBet');
+        const autoBetStatus = document.getElementById('autoBetStatus');
+        const autoBetsMade = document.getElementById('autoBetsMade');
+        const autoCurrentBet = document.getElementById('autoCurrentBet');
+        const autoWinStreak = document.getElementById('autoWinStreak');
+        const autoLossStreak = document.getElementById('autoLossStreak');
 
 
     // --- Game State ---
@@ -1763,14 +1825,21 @@
                     currentBet: 1.00,
                     numBets: 0,
                     betsMade: 0,
-                    onWinIncrease: 0,
-                    onLossIncrease: 100,
-                    resetOnWin: true,
-                    resetOnLoss: false,
+                    delay: 1000,
+                    onWinAction: 'reset',
+                    onWinValue: 0,
+                    onLossAction: 'increase',
+                    onLossValue: 100,
                     stopOnProfit: 0,
                     stopOnLoss: 0,
+                    stopOnWinStreak: 0,
+                    stopOnLossStreak: 0,
+                    maxBet: 0,
                     sessionStartCash: 0,
                     sessionProfit: 0,
+                    winStreak: 0,
+                    lossStreak: 0,
+                    lastResult: null
                 }
             };
             // restore account if logged in
@@ -3758,7 +3827,7 @@
             mineCountInput.disabled = controlsDisabled;
             diceSlider.disabled = controlsDisabled;
             limboTargetInput.disabled = controlsDisabled;
-            document.querySelectorAll('#autoBetControls input').forEach(el => el.disabled = isAutoBetting);
+            document.querySelectorAll('#autoBetControls input, #autoBetControls select').forEach(el => el.disabled = isAutoBetting);
             
             blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn');
             
@@ -4008,27 +4077,59 @@
         // --- Auto Bet Logic ---
         function startAutoBet() {
             const auto = state.autoBet;
-            auto.isActive = true;
             
+            // Get values from inputs
             auto.baseBet = parseFloat(autoBetAmountInput.value) || 1.00;
             auto.currentBet = auto.baseBet;
             auto.numBets = parseInt(autoNumBetsInput.value) || 0;
-            auto.onWinIncrease = parseFloat(autoOnWinValueInput.value) || 0;
-            auto.onLossIncrease = parseFloat(autoOnLossValueInput.value) || 0;
-            auto.resetOnWin = autoOnWinValueInput.value === '';
-            auto.resetOnLoss = autoOnLossValueInput.value === '';
+            auto.delay = parseInt(autoDelayInput.value) || 1000;
+            auto.onWinAction = autoOnWinActionSelect.value;
+            auto.onWinValue = parseFloat(autoOnWinValueInput.value) || 0;
+            auto.onLossAction = autoOnLossActionSelect.value;
+            auto.onLossValue = parseFloat(autoOnLossValueInput.value) || 100;
             auto.stopOnProfit = parseFloat(autoStopOnProfitInput.value) || 0;
             auto.stopOnLoss = parseFloat(autoStopOnLossInput.value) || 0;
+            auto.stopOnWinStreak = parseInt(autoStopOnWinStreakInput.value) || 0;
+            auto.stopOnLossStreak = parseInt(autoStopOnLossStreakInput.value) || 0;
+            auto.maxBet = parseFloat(autoMaxBetInput.value) || 0;
             
+            // Validate inputs
+            if (auto.baseBet <= 0 || auto.baseBet > state.currentCash) {
+                gameMessageEl.textContent = "Invalid base bet amount.";
+                gameMessageEl.style.color = '#ef4444';
+                return;
+            }
+            
+            if (auto.numBets < 0) {
+                gameMessageEl.textContent = "Number of bets must be 0 or positive.";
+                gameMessageEl.style.color = '#ef4444';
+                return;
+            }
+            
+            if (auto.delay < 100) {
+                gameMessageEl.textContent = "Delay must be at least 100ms.";
+                gameMessageEl.style.color = '#ef4444';
+                return;
+            }
+            
+            // Start auto betting
+            auto.isActive = true;
             auto.betsMade = 0;
+            auto.winStreak = 0;
+            auto.lossStreak = 0;
             auto.sessionStartCash = state.currentCash;
             auto.sessionProfit = 0;
-
+            
             startAutoBetBtn.textContent = "Stop Auto Bet";
             startAutoBetBtn.classList.replace('btn-primary', 'btn-danger');
-            gameMessageEl.textContent = 'Auto-betting started...';
-            updateUI();
+            autoBetStatus.classList.remove('hidden');
             
+            gameMessageEl.textContent = "Auto betting started.";
+            gameMessageEl.style.color = '#4ade80';
+            
+            updateAutoBetStatus();
+            
+            // Place first bet
             placeBet();
         }
         
@@ -4036,50 +4137,136 @@
             state.autoBet.isActive = false;
             startAutoBetBtn.textContent = "Start Auto Bet";
             startAutoBetBtn.classList.replace('btn-danger', 'btn-primary');
-            gameMessageEl.textContent = 'Auto-betting stopped.';
-            updateUI();
+            autoBetStatus.classList.add('hidden');
+            
+            gameMessageEl.textContent = "Auto betting stopped.";
+            gameMessageEl.style.color = '#fbbf24';
+        }
+
+        function updateAutoBetStatus() {
+            const auto = state.autoBet;
+            autoBetsMade.textContent = auto.betsMade;
+            autoCurrentBet.textContent = formatCurrency(auto.currentBet, false);
+            autoWinStreak.textContent = auto.winStreak;
+            autoLossStreak.textContent = auto.lossStreak;
+        }
+
+        function calculateNextBet(wasWin) {
+            const auto = state.autoBet;
+            let newBet = auto.currentBet;
+            
+            if (wasWin) {
+                auto.winStreak++;
+                auto.lossStreak = 0;
+                
+                switch (auto.onWinAction) {
+                    case 'reset':
+                        newBet = auto.baseBet;
+                        break;
+                    case 'increase':
+                        newBet = auto.currentBet * (1 + auto.onWinValue / 100);
+                        break;
+                    case 'decrease':
+                        newBet = auto.currentBet * (1 - auto.onWinValue / 100);
+                        break;
+                    case 'multiply':
+                        newBet = auto.currentBet * auto.onWinValue;
+                        break;
+                }
+            } else {
+                auto.lossStreak++;
+                auto.winStreak = 0;
+                
+                switch (auto.onLossAction) {
+                    case 'reset':
+                        newBet = auto.baseBet;
+                        break;
+                    case 'increase':
+                        newBet = auto.currentBet * (1 + auto.onLossValue / 100);
+                        break;
+                    case 'decrease':
+                        newBet = auto.currentBet * (1 - auto.onLossValue / 100);
+                        break;
+                    case 'multiply':
+                        newBet = auto.currentBet * auto.onLossValue;
+                        break;
+                }
+            }
+            
+            // Apply max bet limit
+            if (auto.maxBet > 0 && newBet > auto.maxBet) {
+                newBet = auto.maxBet;
+            }
+            
+            return Math.max(0.01, newBet); // Ensure minimum bet of $0.01
         }
 
         function runNextAutoBet(wasWin) {
             const auto = state.autoBet;
             
-            // 1. Update bet amount for next round
-            if (wasWin) {
-                if (auto.resetOnWin) auto.currentBet = auto.baseBet;
-                else auto.currentBet *= (1 + auto.onWinIncrease / 100);
-            } else { // wasLoss
-                if (auto.resetOnLoss) auto.currentBet = auto.baseBet;
-                else auto.currentBet *= (1 + auto.onLossIncrease / 100);
-            }
-            // ensure bet is not smaller than a cent
-            auto.currentBet = Math.max(0.01, auto.currentBet);
-
-            // 2. Update session stats
+            if (!auto.isActive) return;
+            
             auto.betsMade++;
+            
+            // Update session profit
             auto.sessionProfit = state.currentCash - auto.sessionStartCash;
-
-            // 3. Check stop conditions
-            if (!auto.isActive) return; // a game might have stopped it (e.g. keno)
-            if (auto.numBets > 0 && auto.betsMade >= auto.numBets) {
-                gameMessageEl.textContent = `Target number of bets (${auto.numBets}) reached.`;
-                stopAutoBet();
-                return;
-            }
+            
+            // Check stop conditions
             if (auto.stopOnProfit > 0 && auto.sessionProfit >= auto.stopOnProfit) {
-                gameMessageEl.textContent = `Profit target of ${formatCurrency(auto.stopOnProfit, false)} reached.`;
-                stopAutoBet();
-                return;
-            }
-             if (auto.stopOnLoss > 0 && auto.sessionProfit <= -auto.stopOnLoss) {
-                gameMessageEl.textContent = `Loss limit of ${formatCurrency(auto.stopOnLoss, false)} reached.`;
+                gameMessageEl.textContent = `Auto bet stopped: Profit target reached (${formatCurrency(auto.sessionProfit, false)})`;
+                gameMessageEl.style.color = '#4ade80';
                 stopAutoBet();
                 return;
             }
             
-            // 4. Reset round and place next bet
-            resetGameRound();
-            updateUI(); // update UI before placing next bet
-            setTimeout(placeBet, 500); // 500ms delay between bets
+            if (auto.stopOnLoss > 0 && auto.sessionProfit <= -auto.stopOnLoss) {
+                gameMessageEl.textContent = `Auto bet stopped: Loss limit reached (${formatCurrency(-auto.sessionProfit, false)})`;
+                gameMessageEl.style.color = '#ef4444';
+                stopAutoBet();
+                return;
+            }
+            
+            if (auto.stopOnWinStreak > 0 && auto.winStreak >= auto.stopOnWinStreak) {
+                gameMessageEl.textContent = `Auto bet stopped: Win streak reached (${auto.winStreak})`;
+                gameMessageEl.style.color = '#4ade80';
+                stopAutoBet();
+                return;
+            }
+            
+            if (auto.stopOnLossStreak > 0 && auto.lossStreak >= auto.stopOnLossStreak) {
+                gameMessageEl.textContent = `Auto bet stopped: Loss streak reached (${auto.lossStreak})`;
+                gameMessageEl.style.color = '#ef4444';
+                stopAutoBet();
+                return;
+            }
+            
+            // Check bet count limit
+            if (auto.numBets > 0 && auto.betsMade >= auto.numBets) {
+                gameMessageEl.textContent = `Auto bet stopped: Bet count limit reached (${auto.betsMade})`;
+                gameMessageEl.style.color = '#fbbf24';
+                stopAutoBet();
+                return;
+            }
+            
+            // Calculate next bet amount
+            auto.currentBet = calculateNextBet(wasWin);
+            
+            // Ensure bet doesn't exceed available cash
+            if (auto.currentBet > state.currentCash) {
+                gameMessageEl.textContent = "Not enough cash for next auto bet. Stopping.";
+                gameMessageEl.style.color = '#ef4444';
+                stopAutoBet();
+                return;
+            }
+            
+            updateAutoBetStatus();
+            
+            // Place next bet after delay
+            setTimeout(() => {
+                if (auto.isActive) {
+                    placeBet();
+                }
+            }, auto.delay);
         }
 
         // --- Event Listeners ---
@@ -4161,8 +4348,7 @@
             else startAutoBet();
         });
         
-        autoResetOnWin.addEventListener('click', () => autoOnWinValueInput.value = '' );
-        autoResetOnLoss.addEventListener('click', () => autoOnLossValueInput.value = '' );
+
 
         // Sound toggle button
         const soundToggleBtn = document.getElementById('soundToggleBtn');
