@@ -266,21 +266,99 @@
             background-color: #334155;
         }
         .card {
-            background-color: white;
-            color: black;
-            border-radius: 6px;
-            width: 60px;
-            height: 90px;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            color: #1e293b;
+            border-radius: 8px;
+            width: 70px;
+            height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            border: 1px solid #ccc;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
-        .card.red { color: #ef4444; }
-        .card.hidden { background-color: #94a3b8; }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        .card.red { 
+            color: #ef4444; 
+            background: linear-gradient(145deg, #ffffff, #fef2f2);
+        }
+        .card.hidden { 
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border-color: #475569;
+            color: transparent !important;
+            position: relative;
+        }
+        .card.hidden::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255,255,255,0.05) 0%, transparent 50%),
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255,255,255,0.02) 2px,
+                    rgba(255,255,255,0.02) 4px
+                );
+            border-radius: 6px;
+        }
+        .card.hidden::after {
+            content: '🂠';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            opacity: 0.8;
+            color: #94a3b8;
+            z-index: 10;
+        }
+        .card.dealt {
+            animation: cardDeal 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes cardDeal {
+            0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.1) rotate(5deg); opacity: 0.8; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .card.bust {
+            animation: cardBust 0.6s ease-out;
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            color: white;
+            border-color: #ef4444;
+        }
+        @keyframes cardBust {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(0.9) rotate(5deg); }
+            75% { transform: scale(1.05) rotate(-2deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        .card.blackjack {
+            animation: cardBlackjack 1s ease-out;
+            background: linear-gradient(145deg, #10b981, #059669);
+            color: white;
+            border-color: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+        @keyframes cardBlackjack {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
         .hand-container {
             display: flex;
             gap: 8px;
@@ -1257,6 +1335,81 @@
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.2);
             },
+
+            // Generate a card deal sound
+            playCardDeal() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'triangle';
+                
+                // Card flip sound
+                osc.frequency.setValueAtTime(200, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(400, audioContext.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.08, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.1);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.1);
+            },
+
+            // Generate a Blackjack win sound
+            playBlackjackWin() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sine';
+                
+                // Victory fanfare
+                osc.frequency.setValueAtTime(440, audioContext.currentTime);
+                osc.frequency.setValueAtTime(554, audioContext.currentTime + 0.1);
+                osc.frequency.setValueAtTime(659, audioContext.currentTime + 0.2);
+                osc.frequency.setValueAtTime(880, audioContext.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.15, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.15, audioContext.currentTime + 0.3);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.4);
+            },
+
+            // Generate a Blackjack bust sound
+            playBlackjackBust() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sawtooth';
+                
+                // Bust sound - descending notes
+                osc.frequency.setValueAtTime(400, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(300, audioContext.currentTime + 0.1);
+                osc.frequency.setValueAtTime(200, audioContext.currentTime + 0.1);
+                osc.frequency.linearRampToValueAtTime(100, audioContext.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.12, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.12, audioContext.currentTime + 0.2);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.3);
+            },
             
             // Toggle sound on/off
             toggle() {
@@ -1401,7 +1554,7 @@
                 limbo: { target: 2.00 },
                 mines: { grid: [], rows: 5, cols: 5, mineCount: 3, gemsFound: 0, payoutMultiplier: 1.0, pendingTiles: [], revealTimer: null },
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
-                blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
+                blackjack: { deck: [], playerHand: [], dealerHand: [], dealerVisibleHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
                 slide: { risk: 'easy' },
                 diamonds: { hand: [], colors: ['red', 'blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'cyan'], roundBet: 0 },
@@ -1620,6 +1773,11 @@
                 state.mines.revealTimer = null;
             }
             state.blackjack.status = 'betting';
+            state.blackjack.dealerVisibleHand = [];
+            // Clear any card animations
+            document.querySelectorAll('.card.bust, .card.blackjack, .card.dealt').forEach(card => {
+                card.classList.remove('bust', 'blackjack', 'dealt');
+            });
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
@@ -2232,89 +2390,319 @@
         function startBlackjackGame() {
             state.blackjack.deck = createDeck();
             shuffleDeck(state.blackjack.deck);
-            state.blackjack.playerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
-            state.blackjack.dealerHand = [state.blackjack.deck.pop(), state.blackjack.deck.pop()];
-            state.blackjack.status = 'playerTurn';
-            renderBlackjackHands();
+            state.blackjack.playerHand = [];
+            state.blackjack.dealerHand = [];
+            state.blackjack.dealerVisibleHand = [];
+            state.blackjack.status = 'dealing';
             state.blackjack.roundBet = state.currentRoundBet;
-            const playerScore = calculateHandValue(state.blackjack.playerHand);
-            if (playerScore === 21) {
-                const winnings = state.blackjack.roundBet * 2.5; // 3:2 payout
-                gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
-                handleWin(winnings, state.blackjack.roundBet);
-                setTimeout(resetGameRound, 1500);
-            }
-            updateUI();
-        }
-
-        function renderBlackjackHands(revealDealerCard = false) {
+            
+            // Clear hands
             playerHandEl.innerHTML = '';
             dealerHandEl.innerHTML = '';
-            state.blackjack.playerHand.forEach(card => {
-                playerHandEl.innerHTML += `<div class="card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}">${card.rank}${card.suit}</div>`;
-            });
-            state.blackjack.dealerHand.forEach((card, index) => {
-                if (index === 0 || revealDealerCard) {
-                    dealerHandEl.innerHTML += `<div class="card ${['♥', '♦'].includes(card.suit) ? 'red' : ''}">${card.rank}${card.suit}</div>`;
-                } else {
-                    dealerHandEl.innerHTML += `<div class="card hidden"></div>`;
-                }
-            });
-            state.blackjack.playerScore = calculateHandValue(state.blackjack.playerHand);
-            playerScoreEl.textContent = state.blackjack.playerScore;
-            if (revealDealerCard) {
-                state.blackjack.dealerScore = calculateHandValue(state.blackjack.dealerHand);
-                dealerScoreEl.textContent = state.blackjack.dealerScore;
-            } else {
-                dealerScoreEl.textContent = getCardValue(state.blackjack.dealerHand[0]);
-            }
+            playerScoreEl.textContent = '0';
+            dealerScoreEl.textContent = '?';
+            
+            gameMessageEl.textContent = "Dealing cards...";
+            gameMessageEl.style.color = '#fbbf24';
+            
+            // Deal cards with animation
+            dealBlackjackCards();
         }
+
+        function dealBlackjackCards() {
+            let cardIndex = 0;
+            const dealInterval = setInterval(() => {
+                if (cardIndex < 4) {
+                    const card = state.blackjack.deck.pop();
+                    
+                    if (cardIndex % 2 === 0) {
+                        // Player card
+                        state.blackjack.playerHand.push(card);
+                        addCardToHand(playerHandEl, card, false);
+                    } else {
+                        // Dealer card
+                        state.blackjack.dealerHand.push(card);
+                        const isHidden = cardIndex === 1; // Second dealer card is hidden
+                        addCardToHand(dealerHandEl, card, isHidden);
+                        
+                        // Only add to visible hand if not hidden
+                        if (!isHidden) {
+                            state.blackjack.dealerVisibleHand.push(card);
+                        }
+                    }
+                    
+                    // Play deal sound
+                    soundSystem.playCardDeal();
+                    
+                    // Update scores
+                    updateBlackjackScores();
+                    cardIndex++;
+                } else {
+                    clearInterval(dealInterval);
+                    
+                    // Check for Blackjack
+                    const playerScore = calculateHandValue(state.blackjack.playerHand);
+                    if (playerScore === 21) {
+                        // Natural Blackjack!
+                        revealDealerCard();
+                        const dealerScore = calculateHandValue(state.blackjack.dealerHand);
+                        
+                        if (dealerScore === 21) {
+                            // Push
+                            gameMessageEl.textContent = "Blackjack! It's a push.";
+                            gameMessageEl.style.color = '#fbbf24';
+                            setTimeout(() => {
+                                handleWin(state.blackjack.roundBet, state.blackjack.roundBet); // Return bet
+                                setTimeout(resetGameRound, 2000);
+                            }, 1000);
+                        } else {
+                            // Player wins with Blackjack
+                            const winnings = state.blackjack.roundBet * 2.5; // 3:2 payout
+                            gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
+                            gameMessageEl.style.color = '#4ade80';
+                            soundSystem.playBlackjackWin();
+                            setTimeout(() => {
+                                handleWin(winnings, state.blackjack.roundBet);
+                                setTimeout(resetGameRound, 2000);
+                            }, 1000);
+                        }
+                    } else {
+                        // Normal game continues
+                        state.blackjack.status = 'playerTurn';
+                        gameMessageEl.textContent = "Your turn. Hit or Stand?";
+                        gameMessageEl.style.color = '#e2e8f0';
+                        updateUI();
+                    }
+                }
+            }, 600);
+        }
+
+        function addCardToHand(handElement, card, isHidden = false) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card dealt';
+            
+            if (isHidden) {
+                // Create a proper face-down card
+                cardEl.style.cssText = `
+                    background: linear-gradient(145deg, #1e293b, #334155) !important;
+                    border-color: #475569 !important;
+                    color: transparent !important;
+                    position: relative;
+                `;
+                cardEl.innerHTML = `
+                    <div style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: 
+                            radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                            radial-gradient(circle at 70% 70%, rgba(255,255,255,0.05) 0%, transparent 50%),
+                            repeating-linear-gradient(
+                                45deg,
+                                transparent,
+                                transparent 2px,
+                                rgba(255,255,255,0.02) 2px,
+                                rgba(255,255,255,0.02) 4px
+                            );
+                        border-radius: 6px;
+                    "></div>
+                    <div style="
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: 1.5rem;
+                        opacity: 0.8;
+                        color: #94a3b8;
+                        z-index: 10;
+                    ">🂠</div>
+                `;
+            } else {
+                // Create a normal visible card
+                if (['♥', '♦'].includes(card.suit)) {
+                    cardEl.classList.add('red');
+                }
+                cardEl.textContent = `${card.rank}${card.suit}`;
+            }
+            
+            handElement.appendChild(cardEl);
+        }
+
+
         
         function blackjackHit() {
             if (state.blackjack.status !== 'playerTurn') return;
-            state.blackjack.playerHand.push(state.blackjack.deck.pop());
-            renderBlackjackHands();
-            if (state.blackjack.playerScore > 21) {
-                gameMessageEl.textContent = 'Bust! You lose.';
-                handleLoss(state.blackjack.roundBet);
-                setTimeout(resetGameRound, 1500);
-            }
-            updateUI();
+            
+            // Disable buttons during animation
+            hitBtn.disabled = true;
+            standBtn.disabled = true;
+            
+            const card = state.blackjack.deck.pop();
+            state.blackjack.playerHand.push(card);
+            
+            // Add card with animation
+            addCardToHand(playerHandEl, card, false);
+            
+            // Play deal sound
+            soundSystem.playCardDeal();
+            
+            // Update scores
+            updateBlackjackScores();
+            
+            setTimeout(() => {
+                if (state.blackjack.playerScore > 21) {
+                    // Bust!
+                    gameMessageEl.textContent = 'Bust! You lose.';
+                    gameMessageEl.style.color = '#ef4444';
+                    soundSystem.playBlackjackBust();
+                    
+                    // Animate bust cards
+                    const playerCards = playerHandEl.querySelectorAll('.card');
+                    playerCards.forEach(card => card.classList.add('bust'));
+                    
+                    setTimeout(() => {
+                        handleLoss(state.blackjack.roundBet);
+                        setTimeout(resetGameRound, 2000);
+                    }, 1000);
+                } else {
+                    // Re-enable buttons
+                    hitBtn.disabled = false;
+                    standBtn.disabled = false;
+                    updateUI();
+                }
+            }, 500);
         }
 
         function blackjackStand() {
             if (state.blackjack.status !== 'playerTurn') return;
+            
+            // Disable buttons
+            hitBtn.disabled = true;
+            standBtn.disabled = true;
+            
             state.blackjack.status = 'dealerTurn';
-            renderBlackjackHands(true);
-            const dealerTurn = setInterval(() => {
-                if (state.blackjack.dealerScore < 17) {
-                    state.blackjack.dealerHand.push(state.blackjack.deck.pop());
-                    renderBlackjackHands(true);
-                } else {
-                    clearInterval(dealerTurn);
-                    endBlackjackHand();
+            gameMessageEl.textContent = "Dealer's turn...";
+            gameMessageEl.style.color = '#fbbf24';
+            
+            // Reveal dealer's hidden card
+            revealDealerCard();
+            
+            // Dealer plays
+            playDealerTurn();
+        }
+
+        function revealDealerCard() {
+            // Find the hidden card by looking for the card back symbol
+            const dealerCards = dealerHandEl.querySelectorAll('.card');
+            dealerCards.forEach((card, index) => {
+                if (card.innerHTML.includes('🂠')) {
+                    // This is the hidden card, reveal it
+                    const dealerCard = state.blackjack.dealerHand[index];
+                    card.style.cssText = ''; // Clear all inline styles
+                    card.className = 'card dealt'; // Reset classes
+                    card.innerHTML = ''; // Clear innerHTML
+                    card.textContent = `${dealerCard.rank}${dealerCard.suit}`;
+                    if (['♥', '♦'].includes(dealerCard.suit)) {
+                        card.classList.add('red');
+                    }
+                    // Add the revealed card to the visible hand
+                    state.blackjack.dealerVisibleHand.push(dealerCard);
+                    soundSystem.playCardDeal();
                 }
-            }, 1000);
+            });
+            updateBlackjackScores();
+        }
+
+        function playDealerTurn() {
+            let dealerCardIndex = 2; // Start after the two initial cards
+            
+            const dealerInterval = setInterval(() => {
+                if (state.blackjack.dealerScore < 17) {
+                    // Dealer hits
+                    const card = state.blackjack.deck.pop();
+                    state.blackjack.dealerHand.push(card);
+                    state.blackjack.dealerVisibleHand.push(card); // Add to visible hand
+                    addCardToHand(dealerHandEl, card, false);
+                    soundSystem.playCardDeal();
+                    updateBlackjackScores();
+                    dealerCardIndex++;
+                } else {
+                    // Dealer stands
+                    clearInterval(dealerInterval);
+                    setTimeout(() => {
+                        endBlackjackHand();
+                    }, 500);
+                }
+            }, 800);
         }
 
         function endBlackjackHand() {
-            renderBlackjackHands(true);
             const playerScore = state.blackjack.playerScore;
             const dealerScore = state.blackjack.dealerScore;
             const roundBet = state.blackjack.roundBet;
-            if (dealerScore > 21 || playerScore > dealerScore) {
-                const winnings = roundBet * 2;
-                gameMessageEl.textContent = `You win ${formatCurrency(winnings, false)}!`;
-                handleWin(winnings, roundBet);
+            
+            if (dealerScore > 21) {
+                // Dealer busts
+                gameMessageEl.textContent = `Dealer busts! You win ${formatCurrency(roundBet * 2, false)}!`;
+                gameMessageEl.style.color = '#4ade80';
+                soundSystem.playBlackjackWin();
+                
+                // Animate dealer cards as bust
+                const dealerCards = dealerHandEl.querySelectorAll('.card');
+                dealerCards.forEach(card => card.classList.add('bust'));
+                
+                setTimeout(() => {
+                    handleWin(roundBet * 2, roundBet);
+                    setTimeout(resetGameRound, 2000);
+                }, 1000);
+            } else if (playerScore > dealerScore) {
+                // Player wins
+                gameMessageEl.textContent = `You win ${formatCurrency(roundBet * 2, false)}!`;
+                gameMessageEl.style.color = '#4ade80';
+                soundSystem.playBlackjackWin();
+                
+                setTimeout(() => {
+                    handleWin(roundBet * 2, roundBet);
+                    setTimeout(resetGameRound, 2000);
+                }, 1000);
             } else if (dealerScore > playerScore) {
+                // Dealer wins
                 gameMessageEl.textContent = 'Dealer wins.';
-                handleLoss(roundBet);
+                gameMessageEl.style.color = '#ef4444';
+                soundSystem.playBlackjackBust();
+                
+                setTimeout(() => {
+                    handleLoss(roundBet);
+                    setTimeout(resetGameRound, 2000);
+                }, 1000);
             } else {
+                // Push
                 gameMessageEl.textContent = 'Push.';
-                handleWin(roundBet, roundBet); // Return original bet, profit is 0
+                gameMessageEl.style.color = '#fbbf24';
+                
+                setTimeout(() => {
+                    handleWin(roundBet, roundBet); // Return original bet, profit is 0
+                    setTimeout(resetGameRound, 2000);
+                }, 1000);
             }
-            setTimeout(resetGameRound, 2000);
-            updateUI();
+        }
+
+        function updateBlackjackScores() {
+            state.blackjack.playerScore = calculateHandValue(state.blackjack.playerHand);
+            
+            playerScoreEl.textContent = state.blackjack.playerScore;
+            
+            // Only show dealer score when player is done and all cards are revealed
+            if (state.blackjack.status === 'playerTurn' || state.blackjack.status === 'dealing') {
+                // During player turn or dealing - don't show dealer score at all
+                dealerScoreEl.textContent = '?';
+            } else {
+                // Show full dealer score when game is over
+                state.blackjack.dealerScore = calculateHandValue(state.blackjack.dealerHand);
+                dealerScoreEl.textContent = state.blackjack.dealerScore;
+            }
         }
 
         // --- Keno Logic ---
