@@ -416,7 +416,10 @@
                 <div id="flipHistory" class="live-history-bar"></div>
             </div>
             
-            <p id="gameMessage" class="text-lg text-center text-slate-400 mt-2 mb-4 h-8">&nbsp;</p>
+            <div class="text-center mt-2 mb-4">
+                <p id="gameMessage" class="text-lg text-center text-slate-400 mb-1 h-8">&nbsp;</p>
+                <p id="xpMessage" class="text-sm text-center text-green-400 h-5">&nbsp;</p>
+            </div>
 
             <!-- Controls -->
             <div class="flex space-x-2 -mb-px">
@@ -617,6 +620,7 @@
     const accountXpTextEl = document.getElementById('accountXpText');
         const runTimeEl = document.getElementById('runTime');
         const gameMessageEl = document.getElementById('gameMessage');
+        const xpMessageEl = document.getElementById('xpMessage');
         const betAmountInput = document.getElementById('betAmount');
         const placeBetBtn = document.getElementById('placeBetBtn');
         const cashOutBtn = document.getElementById('cashOutBtn');
@@ -905,11 +909,12 @@
             state.runStats[state.currentGame].won += winnings;
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
             updateLiveStatsUI();
-            // award XP and append to current message so money + XP appear together
+            // award XP and show it under the money message
             const xp = awardXpForWin(winnings, betAmount) || 0;
-            const baseMsg = (gameMessageEl.textContent && gameMessageEl.textContent.trim() !== '\u00A0') ? gameMessageEl.textContent : '';
-            const xpMsg = xp > 0 ? ` ${xp} XP earned!` : '';
-            gameMessageEl.textContent = `${baseMsg}${xpMsg}`.trim();
+            if (xp > 0 && xpMessageEl) {
+                xpMessageEl.textContent = `+${xp} XP`;
+                setTimeout(() => { xpMessageEl.textContent = '\u00A0'; }, 2000);
+            }
 
             if (state.autoBet.isActive) {
                 runNextAutoBet(true);
