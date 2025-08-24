@@ -2647,6 +2647,22 @@
             return parseInt(card.rank);
         }
 
+        function getHiloCardValue(card) {
+            if (card.rank === 'J') return 11;
+            if (card.rank === 'Q') return 12;
+            if (card.rank === 'K') return 13;
+            if (card.rank === 'A') return 1;
+            return parseInt(card.rank);
+        }
+
+        function getHiloCardValue(card) {
+            if (card.rank === 'J') return 11;
+            if (card.rank === 'Q') return 12;
+            if (card.rank === 'K') return 13;
+            if (card.rank === 'A') return 14;
+            return parseInt(card.rank);
+        }
+
         function calculateHandValue(hand) {
             let value = 0;
             let aceCount = 0;
@@ -3087,7 +3103,7 @@
         function updateHiloChances() {
             if (!state.hilo.currentCard) return;
             
-            const currentValue = getCardValue(state.hilo.currentCard);
+            const currentValue = getHiloCardValue(state.hilo.currentCard);
             const remainingCards = state.hilo.deck.length;
             
             let higherCount = 0;
@@ -3096,7 +3112,7 @@
             
             // Count cards in deck
             state.hilo.deck.forEach(card => {
-                const cardValue = getCardValue(card);
+                const cardValue = getHiloCardValue(card);
                 if (cardValue > currentValue) higherCount++;
                 else if (cardValue < currentValue) lowerCount++;
                 else sameCount++;
@@ -3179,8 +3195,8 @@
             soundSystem.playCardDeal();
             
             setTimeout(() => {
-                const currentValue = getCardValue(state.hilo.currentCard);
-                const nextValue = getCardValue(state.hilo.nextCard);
+                const currentValue = getHiloCardValue(state.hilo.currentCard);
+                const nextValue = getHiloCardValue(state.hilo.nextCard);
                 
                 let correct = false;
                 if (isHigher) {
