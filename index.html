@@ -4155,6 +4155,28 @@
             soundToggleBtn.classList.toggle('bg-slate-500', !enabled);
         });
 
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            // Prevent default behavior for these keys
+            if (event.code === 'Space' || event.code === 'ControlLeft') {
+                event.preventDefault();
+            }
+            
+            // Space to place bet
+            if (event.code === 'Space' && !event.repeat) {
+                if (state.runActive && !state.gameInProgress && !state.autoBet.isActive) {
+                    placeBet();
+                }
+            }
+            
+            // Left Control to cash out
+            if (event.code === 'ControlLeft' && !event.repeat) {
+                if (state.runActive && state.gameInProgress && ['crash', 'mines', 'hilo'].includes(state.currentGame)) {
+                    cashOut();
+                }
+            }
+        });
+
     // Initial Load
         // Prefill last username in login box for convenience (do not auto-login)
         (function prefillLastAccount() {
