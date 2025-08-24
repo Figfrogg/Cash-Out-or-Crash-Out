@@ -905,8 +905,12 @@
             state.runStats[state.currentGame].won += winnings;
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
             updateLiveStatsUI();
-            awardXpForWin(winnings, betAmount);
-            
+            // award XP and append to current message so money + XP appear together
+            const xp = awardXpForWin(winnings, betAmount) || 0;
+            const baseMsg = (gameMessageEl.textContent && gameMessageEl.textContent.trim() !== '\u00A0') ? gameMessageEl.textContent : '';
+            const xpMsg = xp > 0 ? ` ${xp} XP earned!` : '';
+            gameMessageEl.textContent = `${baseMsg}${xpMsg}`.trim();
+
             if (state.autoBet.isActive) {
                 runNextAutoBet(true);
             }
@@ -1143,9 +1147,11 @@
             const won = result >= target;
             if (won) {
                 const winnings = roundBet * target;
-                handleWin(winnings, roundBet);
                 gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
+                limboResultDisplay.classList.remove('text-slate-200');
+                limboResultDisplay.classList.add('text-green-400');
+                handleWin(winnings, roundBet);
                 limboResultDisplay.classList.remove('text-slate-200');
                 limboResultDisplay.classList.add('text-green-400');
             } else {
@@ -1274,10 +1280,10 @@
             
             if (won) {
                 const winnings = state.currentRoundBet * state.dice.multiplier;
-                handleWin(winnings, state.currentRoundBet);
                 gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
                 diceResultDisplay.style.color = '#4ade80';
+                handleWin(winnings, state.currentRoundBet);
             } else {
                 gameMessageEl.textContent = `You lost.`;
                 gameMessageEl.style.color = '#ef4444';
@@ -1338,8 +1344,8 @@
             const playerScore = calculateHandValue(state.blackjack.playerHand);
             if (playerScore === 21) {
                 const winnings = state.blackjack.roundBet * 2.5; // 3:2 payout
-                handleWin(winnings, state.blackjack.roundBet);
                 gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
+                handleWin(winnings, state.blackjack.roundBet);
                 setTimeout(resetGameRound, 1500);
             }
             updateUI();
@@ -1402,8 +1408,8 @@
             const roundBet = state.blackjack.roundBet;
             if (dealerScore > 21 || playerScore > dealerScore) {
                 const winnings = roundBet * 2;
-                handleWin(winnings, roundBet);
                 gameMessageEl.textContent = `You win ${formatCurrency(winnings, false)}!`;
+                handleWin(winnings, roundBet);
             } else if (dealerScore > playerScore) {
                 gameMessageEl.textContent = 'Dealer wins.';
                 handleLoss(roundBet);
@@ -1508,9 +1514,9 @@
                     clearInterval(drawInterval);
                     if (payoutMultiplier > 0) {
                         const winnings = roundBet * payoutMultiplier;
-                        handleWin(winnings, roundBet);
                         gameMessageEl.textContent = `You hit ${numHits} numbers and won ${formatCurrency(winnings, false)}!`;
                         gameMessageEl.style.color = '#4ade80';
+                        handleWin(winnings, roundBet);
                     } else {
                         gameMessageEl.textContent = `You hit ${numHits} numbers and lost.`;
                         gameMessageEl.style.color = '#ef4444';
@@ -1573,9 +1579,9 @@
                 const roundBet = state.currentRoundBet;
                 if (multiplier > 0) {
                     const winnings = roundBet * multiplier;
-                    handleWin(winnings, roundBet);
                     gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                     gameMessageEl.style.color = '#4ade80';
+                    handleWin(winnings, roundBet);
                 } else {
                     gameMessageEl.textContent = 'You lost.';
                     gameMessageEl.style.color = '#ef4444';
@@ -1651,6 +1657,8 @@
             if (result === choice) { // Win
                 if (state.autoBet.isActive) {
                     const winnings = state.flip.roundBet * 1.95;
+                    gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
+                    gameMessageEl.style.color = '#4ade80';
                     handleWin(winnings, state.flip.roundBet);
                     setTimeout(() => { 
                         resetGameRound();
@@ -1899,9 +1907,7 @@
             state.account.level = lvlInfo.level;
             state.account.xpInLevel = lvlInfo.xpInLevel;
             saveAccount(state.account);
-            // show small notification
-            gameMessageEl.textContent = `You earned ${xpGained} XP!`;
-            setTimeout(() => gameMessageEl.textContent = '\u00A0', 2000);
+            return xpGained;
         }
 
         // Login page elements
