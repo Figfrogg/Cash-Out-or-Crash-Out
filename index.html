@@ -2410,6 +2410,21 @@
                 if (state.mines.mineCount < 3) {
                     // Very low multipliers for easy games
                     baseMultiplier = 1.0 + (state.mines.gemsFound * 0.1);
+                } else if (state.mines.mineCount >= 20 && state.mines.mineCount <= 24) {
+                    // MASSIVE payouts for 20-24 mines - even 1 gem gets you rich!
+                    if (state.mines.mineCount === 24 && state.mines.gemsFound === 1) {
+                        // JACKPOT: 1 gem on 24 mines = 50x!
+                        baseMultiplier = 50.0;
+                    } else {
+                        // High base payouts for 20-24 mines
+                        // Formula: baseMultiplier = 10.0 + (mineCount - 20) * 2.0 + gemsFound * 5.0
+                        baseMultiplier = 10.0 + (state.mines.mineCount - 20) * 2.0 + state.mines.gemsFound * 5.0;
+                        
+                        // Additional exponential growth for multiple gems
+                        if (state.mines.gemsFound > 1) {
+                            baseMultiplier *= Math.pow(1.5, state.mines.gemsFound - 1);
+                        }
+                    }
                 } else if (state.mines.mineCount >= 10) {
                     // Much higher multipliers for 10+ mines to make them more rewarding
                     // Formula: baseMultiplier = 1.0 * (1.5 + mineRatio * 1.0)^gemsFound
