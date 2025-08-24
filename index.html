@@ -1862,19 +1862,56 @@
             let message = '';
             
             if (state.currentGame === 'crash') {
-                roundBet = state.crash.roundBet || state.currentRoundBet;
+                roundBet = state.crash.roundBet || state.currentRoundBet || state.currentBet;
+                if (!roundBet || roundBet <= 0) {
+                    console.error('CRASH: Invalid roundBet detected:', { 
+                        crashRoundBet: state.crash.roundBet, 
+                        currentRoundBet: state.currentRoundBet, 
+                        currentBet: state.currentBet 
+                    });
+                    roundBet = state.currentBet || 10; // Fallback to prevent $0 payout
+                }
                 winnings = roundBet * state.crash.multiplier;
                 message = `Cashed out for ${formatCurrency(winnings, false)}!`;
             } else if (state.currentGame === 'mines') {
-                roundBet = state.mines.roundBet || state.currentRoundBet;
+                roundBet = state.mines.roundBet || state.currentRoundBet || state.currentBet;
+                if (!roundBet || roundBet <= 0) {
+                    console.error('MINES: Invalid roundBet detected:', { 
+                        minesRoundBet: state.mines.roundBet, 
+                        currentRoundBet: state.currentRoundBet, 
+                        currentBet: state.currentBet 
+                    });
+                    roundBet = state.currentBet || 10; // Fallback to prevent $0 payout
+                }
                 winnings = roundBet * state.mines.payoutMultiplier;
                 message = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
             } else if (state.currentGame === 'hilo') {
-                roundBet = state.hilo.roundBet || state.currentRoundBet;
+                roundBet = state.hilo.roundBet || state.currentRoundBet || state.currentBet;
+                if (!roundBet || roundBet <= 0) {
+                    console.error('HILO: Invalid roundBet detected:', { 
+                        hiloRoundBet: state.hilo.roundBet, 
+                        currentRoundBet: state.currentRoundBet, 
+                        currentBet: state.currentBet 
+                    });
+                    roundBet = state.currentBet || 10; // Fallback to prevent $0 payout
+                }
                 winnings = roundBet * state.hilo.multiplier;
                 message = `Cashed out ${formatCurrency(winnings, false)} with ${state.hilo.correctGuesses} correct guesses!`;
             } else {
                 return; // Not a cash-outable game
+            }
+            
+            // Final safety check to prevent $0 payouts
+            if (!winnings || winnings <= 0) {
+                console.error('CRITICAL: $0 payout detected!', {
+                    game: state.currentGame,
+                    roundBet: roundBet,
+                    multiplier: state.currentGame === 'crash' ? state.crash.multiplier : 
+                               state.currentGame === 'mines' ? state.mines.payoutMultiplier : 
+                               state.currentGame === 'hilo' ? state.hilo.multiplier : 'unknown'
+                });
+                // Force a minimum payout to prevent $0
+                winnings = Math.max(roundBet, 1);
             }
             
             gameMessageEl.textContent = message;
@@ -1885,6 +1922,18 @@
         }
 
         function handleWin(winnings, betAmount) {
+            // CRITICAL SAFETY CHECK: Prevent $0 payouts
+            if (!winnings || winnings <= 0) {
+                console.error('CRITICAL: handleWin called with $0 winnings!', {
+                    winnings: winnings,
+                    betAmount: betAmount,
+                    game: state.currentGame,
+                    stack: new Error().stack
+                });
+                // Force minimum payout to prevent $0
+                winnings = Math.max(betAmount || 1, 1);
+            }
+            
             const profit = winnings - betAmount;
             addResultToHistory(state.currentGame, { profit });
             state.currentCash += winnings;
@@ -3054,7 +3103,7 @@
                 const cardContainer = card.parentElement;
                 const info = cardContainer.querySelector('.hilo-lineup-info');
                 
-                card.classList.remove('current', 'face-down');
+                card.classList.remove('current', 'face-down', 'red');
                 card.classList.add('face-down');
                 
                 if (index < state.hilo.cardHistory.length) {
@@ -3065,8 +3114,6 @@
                     
                     if (['♥', '♦'].includes(historyItem.card.suit)) {
                         card.classList.add('red');
-                    } else {
-                        card.classList.remove('red');
                     }
                     
                     // Update info
@@ -3078,15 +3125,8 @@
                               historyItem.choice === 'lower' ? '↓ Lower' : '--'}
                         </div>
                     `;
-                } else if (index === state.hilo.cardHistory.length) {
-                    // Current card (face down but highlighted)
-                    card.classList.add('current');
-                    info.innerHTML = `
-                        <div class="hilo-lineup-multiplier">${state.hilo.multiplier.toFixed(2)}x</div>
-                        <div class="hilo-lineup-choice">Current</div>
-                    `;
                 } else {
-                    // Future cards (face down)
+                    // Future cards (face down) - these will be filled as the game progresses
                     info.innerHTML = `
                         <div class="hilo-lineup-multiplier">--</div>
                         <div class="hilo-lineup-choice">--</div>
@@ -3167,11 +3207,17 @@
                     
                     // Add the next card to history with delay
                     setTimeout(() => {
+                        // Add new card to history
                         state.hilo.cardHistory.push({
                             card: state.hilo.nextCard,
                             multiplier: state.hilo.multiplier,
                             choice: isHigher ? 'higher' : 'lower'
                         });
+                        
+                        // If history has more than 8 cards, remove the oldest one to keep only 8
+                        if (state.hilo.cardHistory.length > 8) {
+                            state.hilo.cardHistory.shift();
+                        }
                         
                         // Move to next round
                         state.hilo.currentCard = state.hilo.nextCard;
@@ -3229,11 +3275,31 @@
         function hiloCashOut() {
             if (state.hilo.status !== 'guessing' || state.hilo.correctGuesses === 0) return;
             
-            const winnings = state.hilo.roundBet * state.hilo.multiplier;
+            const roundBet = state.hilo.roundBet || state.currentRoundBet || state.currentBet;
+            if (!roundBet || roundBet <= 0) {
+                console.error('HILO CASHOUT: Invalid roundBet detected:', { 
+                    hiloRoundBet: state.hilo.roundBet, 
+                    currentRoundBet: state.currentRoundBet, 
+                    currentBet: state.currentBet 
+                });
+                return; // Don't cash out with invalid bet
+            }
+            
+            const winnings = roundBet * state.hilo.multiplier;
+            
+            // Safety check to prevent $0 payouts
+            if (!winnings || winnings <= 0) {
+                console.error('HILO CASHOUT: $0 payout detected!', {
+                    roundBet: roundBet,
+                    multiplier: state.hilo.multiplier
+                });
+                return; // Don't cash out with $0 payout
+            }
+            
             gameMessageEl.textContent = `Cashed out with ${state.hilo.correctGuesses} correct guesses! Won ${formatCurrency(winnings, false)}!`;
             gameMessageEl.style.color = '#4ade80';
             
-            handleWin(winnings, state.hilo.roundBet);
+            handleWin(winnings, roundBet);
             resetGameRound();
             updateUI();
         }
