@@ -617,7 +617,7 @@
                             </div>
                             <div id="minesControls" class="mt-2 hidden">
                                  <label for="mineCount" class="block text-sm font-medium mb-1 text-slate-400">Mines (1-24)</label>
-                                 <input type="number" id="mineCount" value="5" min="1" max="24" class="input-field w-full p-3 rounded-md shadow-inner">
+                                 <input type="number" id="mineCount" value="3" min="1" max="24" class="input-field w-full p-3 rounded-md shadow-inner">
                             </div>
                             <div id="diceControls" class="mt-2 hidden">
                                 <button id="diceBetTypeBtn" class="w-full btn bg-green-600 text-white font-bold py-2 rounded-md">Roll Under 50.00</button>
@@ -1181,7 +1181,7 @@
                 currentGame: 'crash',
                 crash: { multiplier: 1.00, crashPoint: 0, startTime: 0 },
                 limbo: { target: 2.00 },
-                mines: { grid: [], rows: 5, cols: 5, mineCount: 5, gemsFound: 0, payoutMultiplier: 1.0, pendingTiles: [], revealTimer: null },
+                mines: { grid: [], rows: 5, cols: 5, mineCount: 3, gemsFound: 0, payoutMultiplier: 1.0, pendingTiles: [], revealTimer: null },
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
@@ -1789,12 +1789,22 @@
                     baseMultiplier += streakBonus;
                 }
 
-                // Apply difficulty scaling
-                if (state.mines.mineCount < 5) {
-                    baseMultiplier = Math.max(0.1, baseMultiplier * 0.25);
-                } else if (state.mines.mineCount > 15) {
-                    baseMultiplier *= 1.5; // Bonus for high difficulty
+                // Apply mine count scaling (3 mines is baseline)
+                const defaultMines = 3;
+                const mineCountRatio = state.mines.mineCount / defaultMines;
+                
+                // Scale multiplier based on mine count
+                // More mines = higher multiplier, fewer mines = lower multiplier
+                if (mineCountRatio > 1) {
+                    // More mines than default - increase multiplier
+                    baseMultiplier *= Math.pow(mineCountRatio, 0.8); // Gradual increase
+                } else if (mineCountRatio < 1) {
+                    // Fewer mines than default - decrease multiplier
+                    baseMultiplier *= Math.pow(mineCountRatio, 1.2); // Gradual decrease
                 }
+                
+                // Ensure minimum multiplier
+                baseMultiplier = Math.max(0.1, baseMultiplier);
 
                 state.mines.payoutMultiplier = baseMultiplier;
                 
