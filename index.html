@@ -917,7 +917,7 @@
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
                 slide: { risk: 'easy' },
-                snakes: { difficulty: 'easy', playerPosition: 0, currentMultiplier: 1.0, status: 'betting', isRolling: false },
+                snakes: { difficulty: 'easy', playerPosition: 0, currentMultiplier: 1.0, status: 'betting', isRolling: false, forcedSnakes: [] },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -1144,6 +1144,7 @@
             state.snakes.isRolling = false;
             state.snakes.playerPosition = 0;
             state.snakes.currentMultiplier = 1.0;
+            state.snakes.forcedSnakes = [];
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
@@ -1792,7 +1793,7 @@
         }
 
         // --- Snakes Logic ---
-        function isSnake(tileNumber, difficulty) {
+        function isSnakeDeterministic(tileNumber, difficulty) {
             // Use a deterministic (but random-looking) formula based on tile number
             // to decide if a tile is a snake. This way, the board is infinite but consistent.
             if (tileNumber <= 10) return false; // First row is always safe
@@ -1800,6 +1801,14 @@
             // A simple pseudo-random check using sine function
             const rand = Math.sin(tileNumber * 12.9898 + difficulty.charCodeAt(0) * 78.233) * 43758.5453;
             return (rand - Math.floor(rand)) < config.snakeChance;
+        }
+        
+        function isSnake(tileNumber, difficulty) {
+            // Combines deterministic snakes with snakes forced by the game logic
+            if (state.snakes.forcedSnakes.includes(tileNumber)) {
+                return true;
+            }
+            return isSnakeDeterministic(tileNumber, difficulty);
         }
 
         function renderSnakesBoard() {
@@ -1839,6 +1848,7 @@
             state.snakes.playerPosition = 0;
             state.snakes.currentMultiplier = 1.0;
             state.snakes.roundBet = state.currentRoundBet;
+            state.snakes.forcedSnakes = [];
             snakesDiceResultEl.textContent = '\u00A0';
             gameMessageEl.textContent = "Roll the dice to move!";
             renderSnakesBoard();
@@ -1846,6 +1856,25 @@
         }
 
         function rollSnakesDice() {
+            // Ensure there's a snake within the next 12 tiles
+            const { playerPosition, difficulty } = state.snakes;
+            let snakeFoundInRange = false;
+            for (let i = 1; i <= 12; i++) {
+                if (isSnake(playerPosition + i, difficulty)) {
+                    snakeFoundInRange = true;
+                    break;
+                }
+            }
+
+            if (!snakeFoundInRange) {
+                // Force a snake to appear in the next 12 tiles
+                const tileToMakeSnake = playerPosition + Math.floor(Math.random() * 12) + 1;
+                // Don't place a snake in the first row (tiles 1-10)
+                if (tileToMakeSnake > 10) {
+                    state.snakes.forcedSnakes.push(tileToMakeSnake);
+                }
+            }
+
             state.snakes.isRolling = true;
             updateUI();
             const die1 = Math.floor(Math.random() * 6) + 1;
@@ -1854,7 +1883,6 @@
             snakesDiceResultEl.textContent = `You rolled a ${roll} (${die1} + ${die2})`;
 
             const newPosition = state.snakes.playerPosition + roll;
-            const difficulty = state.snakes.difficulty;
             
             if (isSnake(newPosition, difficulty)) {
                 state.snakes.playerPosition = newPosition;
