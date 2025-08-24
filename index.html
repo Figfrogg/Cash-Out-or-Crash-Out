@@ -612,8 +612,132 @@
 
 
     <script>
+        // --- Sound System using Web Audio API ---
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const soundSystem = {
+            enabled: true,
+            volume: 0.5,
+            
+            // Generate a quick win sound (high pitch happy beep)
+            playWin(amount) {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                // Higher pitch for bigger wins
+                const baseFreq = amount <= 100 ? 440 : amount <= 500 ? 550 : amount <= 2000 ? 660 : 880;
+                
+                osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, audioContext.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.2, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.2);
+            },
+            
+            // Generate a loss sound (low pitch sad beep)
+            playLoss() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.frequency.setValueAtTime(220, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(110, audioContext.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.2, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.3);
+            },
+            
+            // Generate a click sound for bets and UI
+            playClick() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.frequency.setValueAtTime(880, audioContext.currentTime);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.1, audioContext.currentTime + 0.001);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.05);
+            },
+            
+            // Generate a tick sound for Limbo counter
+            playTick(multiplier) {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                // Higher pitch as multiplier increases
+                const baseFreq = 300 + Math.min(700, multiplier * 100);
+                osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.03, audioContext.currentTime + 0.001);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.05);
+            },
+
+            // Generate a level up celebration sound
+            playLevelUp() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.frequency.setValueAtTime(440, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(880, audioContext.currentTime + 0.1);
+                osc.frequency.setValueAtTime(587.33, audioContext.currentTime + 0.1);
+                osc.frequency.linearRampToValueAtTime(880, audioContext.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.2, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.2, audioContext.currentTime + 0.2);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.3);
+            },
+            
+            // Set volume (0-1)
+            setVolume(vol) {
+                this.volume = Math.max(0, Math.min(1, vol));
+            },
+            
+            // Toggle sound on/off
+            toggle() {
+                this.enabled = !this.enabled;
+                return this.enabled;
+            }
+        };
+
         // --- DOM Elements ---
-    const currentCashEl = document.getElementById('currentCash');
+        const currentCashEl = document.getElementById('currentCash');
     const accountNameEl = document.getElementById('accountName');
     const accountLevelEl = document.getElementById('accountLevel');
     const accountXpBarEl = document.getElementById('accountXpBar');
@@ -907,6 +1031,9 @@
             state.runStats.overall.won += winnings;
             state.runStats[state.currentGame].wins++;
             state.runStats[state.currentGame].won += winnings;
+            
+            // Play win sound based on amount
+            soundSystem.playWin(winnings);
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
             updateLiveStatsUI();
             // award XP and show it under the money message
@@ -924,6 +1051,9 @@
         function handleLoss(betAmount) {
             const profit = -betAmount;
             addResultToHistory(state.currentGame, { profit });
+            
+            // Play loss sound
+            soundSystem.playLoss();
 
             if (state.currentGame === 'crash') {
                 gameMessageEl.textContent = `Crashed at ${state.crash.crashPoint.toFixed(2)}x!`;
@@ -1137,7 +1267,14 @@
                 
                 const progress = elapsedTime / animationDuration;
                 const easedProgress = 1 - Math.pow(1 - progress, 3);
-                currentDisplay = 1 + (result - 1) * easedProgress;
+                const newDisplay = 1 + (result - 1) * easedProgress;
+                
+                // Play tick sound if value changed significantly
+                if (Math.floor(newDisplay * 20) > Math.floor(currentDisplay * 20)) {
+                    soundSystem.playTick(newDisplay);
+                }
+                
+                currentDisplay = newDisplay;
                 limboResultDisplay.textContent = `${currentDisplay.toFixed(2)}x`;
                 
                 requestAnimationFrame(animateNumber);
@@ -1915,9 +2052,15 @@
             // scale: base 10 XP per dollar profit, with sqrt dampening and small floor
             const xpGained = Math.max(1, Math.floor(Math.sqrt(profit + 1) * 10));
             state.account.xp += xpGained;
+            const oldLevel = state.account.level;
             const lvlInfo = computeLevelFromXp(state.account.xp);
             state.account.level = lvlInfo.level;
             state.account.xpInLevel = lvlInfo.xpInLevel;
+            
+            // Play level up sound if level increased
+            if (state.account.level > oldLevel) {
+                soundSystem.playLevelUp();
+            }
             saveAccount(state.account);
             return xpGained;
         }
