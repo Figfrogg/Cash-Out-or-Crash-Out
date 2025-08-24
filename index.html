@@ -213,6 +213,41 @@
         .risk-btn.active {
             background-color: #4f46e5;
         }
+        .diamond {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: diamondAppear 0.5s ease-out;
+        }
+        .diamond:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        @keyframes diamondAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .diamond.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .diamond.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .diamond.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .diamond.yellow { background: linear-gradient(135deg, #eab308, #ca8a04); }
+        .diamond.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .diamond.pink { background: linear-gradient(135deg, #ec4899, #db2777); }
+        .diamond.orange { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .diamond.cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); }
         /* New Styles for Auto-Bet and History */
         .bet-mode-tab {
             background-color: #334155;
@@ -303,6 +338,7 @@
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="slide">Slide</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="diamonds">Diamonds</button>
             </div>
 
             <!-- Game Displays -->
@@ -366,6 +402,30 @@
                     </div>
                 </div>
                 <div id="slideHistory" class="live-history-bar"></div>
+            </div>
+            <div id="diamondsGame" class="game-display hidden">
+                <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                    <div class="text-center mb-4">
+                        <h3 class="text-lg font-bold mb-2">Diamonds Payout Table</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                            <div class="bg-slate-800 p-2 rounded">Zero Match: <span class="text-red-400 font-bold">0.00x</span></div>
+                            <div class="bg-slate-800 p-2 rounded">Pair: <span class="text-yellow-400 font-bold">0.10x</span></div>
+                            <div class="bg-slate-800 p-2 rounded">2 Pair: <span class="text-green-400 font-bold">2.00x</span></div>
+                            <div class="bg-slate-800 p-2 rounded">3 of a Kind: <span class="text-blue-400 font-bold">3.00x</span></div>
+                            <div class="bg-slate-800 p-2 rounded">3+2: <span class="text-purple-400 font-bold">4.00x</span></div>
+                            <div class="bg-slate-800 p-2 rounded">4 of a Kind: <span class="text-pink-400 font-bold">5.00x</span></div>
+                            <div class="bg-slate-800 p-2 rounded">5 of a Kind: <span class="text-red-500 font-bold">50.00x</span></div>
+                        </div>
+                    </div>
+                    <div id="diamondsBoard" class="flex gap-3 justify-center items-center min-h-24">
+                        <!-- Diamonds will be generated here -->
+                    </div>
+                    <div id="diamondsResult" class="text-center">
+                        <div id="diamondsMultiplier" class="text-2xl font-bold text-slate-200">--</div>
+                        <div id="diamondsHand" class="text-sm text-slate-400">Click Play to start</div>
+                    </div>
+                </div>
+                <div id="diamondsHistory" class="live-history-bar"></div>
             </div>
             
             <div class="text-center mt-2 mb-4">
@@ -697,6 +757,52 @@
                 this.volume = Math.max(0, Math.min(1, vol));
             },
             
+            // Generate a chink sound for diamond placement
+            playDiamondChink() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'triangle'; // Crystal-like sound
+                
+                // Crystal chink sound - short, metallic
+                osc.frequency.setValueAtTime(800, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.15, audioContext.currentTime + 0.001);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.1);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.1);
+            },
+
+            // Generate a higher-pitched chink sound for matching diamonds
+            playDiamondMatch() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'triangle'; // Crystal-like sound
+                
+                // Higher pitched crystal chink for matches
+                osc.frequency.setValueAtTime(1200, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(900, audioContext.currentTime + 0.15);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.2, audioContext.currentTime + 0.001);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.15);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.15);
+            },
+            
             // Toggle sound on/off
             toggle() {
                 this.enabled = !this.enabled;
@@ -843,6 +949,7 @@
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
                 slide: { risk: 'easy' },
+                diamonds: { hand: [], colors: ['red', 'blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'cyan'], roundBet: 0 },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -853,9 +960,10 @@
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
                     slide: createEmptyStats(),
+                    diamonds: createEmptyStats(),
                 },
                 history: {
-                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [],
+                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [], diamonds: [],
                 },
                 autoBet: {
                     isActive: false,
@@ -948,6 +1056,7 @@
             if (state.currentGame === 'blackjack') startBlackjackGame();
             if (state.currentGame === 'keno') startKenoGame();
             if (state.currentGame === 'slide') startSlideGame();
+            if (state.currentGame === 'diamonds') startDiamondsGame();
             
             updateUI();
         }
@@ -1696,6 +1805,139 @@
             }, 4500);
         }
 
+        // --- Diamonds Logic ---
+        function startDiamondsGame() {
+            const { colors } = state.diamonds;
+            state.diamonds.hand = [];
+            state.diamonds.roundBet = state.currentRoundBet; // Store the bet for this round
+            
+            // Generate 5 random diamonds
+            for (let i = 0; i < 5; i++) {
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                state.diamonds.hand.push(randomColor);
+            }
+            
+            renderDiamondsBoard();
+            // evaluateDiamondsHand() is now called after the last diamond is placed
+        }
+
+        function renderDiamondsBoard() {
+            const board = document.getElementById('diamondsBoard');
+            board.innerHTML = '';
+            
+            // Place diamonds one at a time with sound effects
+            state.diamonds.hand.forEach((color, index) => {
+                setTimeout(() => {
+                    const diamond = document.createElement('div');
+                    diamond.className = `diamond ${color}`;
+                    diamond.innerHTML = '💎';
+                    diamond.style.opacity = '0';
+                    diamond.style.transform = 'scale(0.5)';
+                    board.appendChild(diamond);
+                    
+                    // Check if this diamond matches any existing diamonds
+                    const existingColors = state.diamonds.hand.slice(0, index);
+                    const hasMatch = existingColors.includes(color);
+                    
+                    // Play appropriate sound
+                    if (hasMatch) {
+                        soundSystem.playDiamondMatch();
+                    } else {
+                        soundSystem.playDiamondChink();
+                    }
+                    
+                    // Animate the diamond appearing
+                    requestAnimationFrame(() => {
+                        diamond.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        diamond.style.opacity = '1';
+                        diamond.style.transform = 'scale(1)';
+                    });
+                    
+                    // If this is the last diamond, evaluate the hand after a short delay
+                    if (index === state.diamonds.hand.length - 1) {
+                        setTimeout(() => {
+                            evaluateDiamondsHand();
+                        }, 500);
+                    }
+                }, index * 400); // 400ms delay between each diamond
+            });
+        }
+
+        function evaluateDiamondsHand() {
+            const hand = state.diamonds.hand;
+            const colorCounts = {};
+            
+            // Count each color
+            hand.forEach(color => {
+                colorCounts[color] = (colorCounts[color] || 0) + 1;
+            });
+            
+            const counts = Object.values(colorCounts).sort((a, b) => b - a);
+            const uniqueColors = Object.keys(colorCounts).length;
+            
+            let multiplier = 0;
+            let handName = '';
+            
+            if (counts[0] === 5) {
+                // 5 of a kind
+                multiplier = 50.00;
+                handName = '5 of a Kind';
+            } else if (counts[0] === 4) {
+                // 4 of a kind
+                multiplier = 5.00;
+                handName = '4 of a Kind';
+            } else if (counts[0] === 3 && counts[1] === 2) {
+                // 3 of a kind + pair
+                multiplier = 4.00;
+                handName = '3 of a Kind & Pair';
+            } else if (counts[0] === 3) {
+                // 3 of a kind
+                multiplier = 3.00;
+                handName = '3 of a Kind';
+            } else if (counts[0] === 2 && counts[1] === 2) {
+                // 2 pair
+                multiplier = 2.00;
+                handName = '2 Pair';
+            } else if (counts[0] === 2) {
+                // 1 pair
+                multiplier = 0.10;
+                handName = 'Pair';
+            } else {
+                // No matches
+                multiplier = 0.00;
+                handName = 'Zero Match';
+            }
+            
+            const roundBet = state.diamonds.roundBet || state.currentRoundBet;
+            const winnings = roundBet * multiplier;
+            
+            // Update display
+            document.getElementById('diamondsMultiplier').textContent = `${multiplier.toFixed(2)}x`;
+            document.getElementById('diamondsHand').textContent = handName;
+            
+            // Color the multiplier based on win/loss
+            const multiplierEl = document.getElementById('diamondsMultiplier');
+            multiplierEl.className = 'text-2xl font-bold';
+            if (multiplier > 0) {
+                multiplierEl.classList.add('text-green-400');
+                gameMessageEl.textContent = `You got ${handName} and won ${formatCurrency(winnings, false)}!`;
+                gameMessageEl.style.color = '#4ade80';
+                handleWin(winnings, roundBet);
+            } else {
+                multiplierEl.classList.add('text-red-400');
+                gameMessageEl.textContent = `You got ${handName}. No win.`;
+                gameMessageEl.style.color = '#ef4444';
+                handleLoss(roundBet);
+            }
+            
+            setTimeout(() => {
+                if (!state.autoBet.isActive) {
+                    resetGameRound();
+                    updateUI();
+                }
+            }, 2000);
+        }
+
         // --- UI and Stats Logic ---
         function updateLiveStatsUI() {
             const { overall } = state.runStats;
@@ -1710,7 +1952,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'diamonds', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -1803,6 +2045,12 @@
                 renderKenoBoard();
                 updateKenoPayouts();
             }
+            if (gameName === 'diamonds') {
+                // Reset diamonds display
+                document.getElementById('diamondsMultiplier').textContent = '--';
+                document.getElementById('diamondsHand').textContent = 'Click Play to start';
+                document.getElementById('diamondsBoard').innerHTML = '';
+            }
             renderHistoryBar();
             updateUI();
         }
@@ -1841,7 +2089,7 @@
             // Persist run stats into the current account's lifetimeStats
             if (!state.account || !state.account.username) return;
             if (!state.account.lifetimeStats) state.account.lifetimeStats = {};
-            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
+            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'diamonds'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
                 if (!run) return;
@@ -1968,7 +2216,7 @@
             }
             const acct = state.account;
             document.getElementById('accountSummaryBody').innerHTML = `<div>Username: <strong>${acct.username}</strong></div><div>Level: <strong>${acct.level || 0}</strong></div><div>XP: <strong>${acct.xp || 0}</strong></div><div>Total Runs: <strong>${acct.totalRuns || 0}</strong></div>`;
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'diamonds', 'overall'];
             const lifeStats = acct.lifetimeStats || {};
             games.forEach(gameKey => {
                 const stats = lifeStats[gameKey] || createEmptyStats();
