@@ -83,27 +83,167 @@
         .mine-tile {
             width: 100%;
             aspect-ratio: 1 / 1;
-            background-color: #475569;
-            border-radius: 6px;
+            background: linear-gradient(145deg, #475569, #334155);
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         .mine-tile:hover {
-            transform: scale(1.05);
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            border-color: #60a5fa;
+        }
+        .mine-tile:active {
+            transform: scale(0.98);
         }
         .mine-tile.revealed {
             cursor: default;
             transform: scale(0.95);
+            border-color: transparent;
         }
         .mine-tile.gem {
-            background-color: #10b981;
+            background: linear-gradient(145deg, #10b981, #059669);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
         }
         .mine-tile.mine {
-            background-color: #ef4444;
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            animation: mineExplode 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.6);
+        }
+        .mine-tile::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .mine-tile:hover::before {
+            transform: translateX(100%);
+        }
+
+        @keyframes mineExplode {
+            0% {
+                transform: scale(1);
+            }
+            25% {
+                transform: scale(1.3);
+            }
+            50% {
+                transform: scale(0.8);
+            }
+            75% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        .mine-tile .gem-sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: sparkle 1.5s infinite;
+        }
+        .mine-tile .gem-sparkle:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+        .mine-tile .gem-sparkle:nth-child(2) { top: 20%; right: 20%; animation-delay: 0.3s; }
+        .mine-tile .gem-sparkle:nth-child(3) { bottom: 20%; left: 20%; animation-delay: 0.6s; }
+        .mine-tile .gem-sparkle:nth-child(4) { bottom: 20%; right: 20%; animation-delay: 0.9s; }
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes tilePulsate {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 6px 20px rgba(96, 165, 250, 0.4);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+        }
+        .mine-tile.pending {
+            animation: tilePulsate 0.6s ease-in-out infinite;
+            border-color: #60a5fa !important;
+            background: linear-gradient(145deg, #1e40af, #3b82f6) !important;
+            cursor: not-allowed !important;
+        }
+        .mines-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        .mines-stat {
+            text-align: center;
+        }
+        .mines-stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .mines-stat-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #e2e8f0;
+        }
+        .mines-progress {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .mines-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+        .mines-multiplier-display {
+            font-size: 2rem;
+            font-weight: 900;
+            text-align: center;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border-radius: 12px;
+            border: 2px solid #475569;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        .mines-multiplier-display.winning {
+            background: linear-gradient(145deg, #065f46, #047857);
+            border-color: #10b981;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+            animation: multiplierPulse 1s ease-in-out;
+        }
+        @keyframes multiplierPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.7);
@@ -356,7 +496,32 @@
                 <div id="limboHistory" class="live-history-bar"></div>
             </div>
             <div id="minesGame" class="game-display hidden">
-                 <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                    <!-- Mines Stats Bar -->
+                    <div class="mines-stats w-full max-w-xs">
+                        <div class="mines-stat">
+                            <div class="mines-stat-label">Gems Found</div>
+                            <div class="mines-stat-value" id="minesGemsFound">0</div>
+                        </div>
+                        <div class="mines-stat">
+                            <div class="mines-stat-label">Mines Left</div>
+                            <div class="mines-stat-value" id="minesMinesLeft">5</div>
+                        </div>
+                        <div class="mines-stat">
+                            <div class="mines-stat-label">Progress</div>
+                            <div class="mines-progress">
+                                <div class="mines-progress-bar" id="minesProgressBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Multiplier Display -->
+                    <div class="mines-multiplier-display" id="minesMultiplierDisplay">
+                        <div class="text-sm text-slate-400 mb-1">Current Multiplier</div>
+                        <div class="text-3xl font-bold" id="minesCurrentMultiplier">1.00x</div>
+                    </div>
+                    
+                    <!-- Mines Grid -->
                     <div class="w-full max-w-xs" id="minesGrid"></div>
                 </div>
                 <div id="minesHistory" class="live-history-bar"></div>
@@ -802,6 +967,78 @@
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.15);
             },
+
+            // Generate a gem discovery sound (crystal chime)
+            playGemDiscovery() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sine';
+                
+                // Crystal chime sound - ascending notes
+                osc.frequency.setValueAtTime(800, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+                osc.frequency.setValueAtTime(1000, audioContext.currentTime + 0.1);
+                osc.frequency.linearRampToValueAtTime(1400, audioContext.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.15, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.15, audioContext.currentTime + 0.2);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.3);
+            },
+
+            // Generate a mine explosion sound
+            playMineExplosion() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sawtooth'; // Harsh explosion sound
+                
+                // Explosion sound - descending frequency with noise
+                osc.frequency.setValueAtTime(200, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.4);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.3, audioContext.currentTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.4);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.4);
+            },
+
+            // Generate a tile click sound
+            playTileClick() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'triangle';
+                
+                // Soft click sound
+                osc.frequency.setValueAtTime(600, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.08, audioContext.currentTime + 0.001);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.1);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.1);
+            },
             
             // Toggle sound on/off
             toggle() {
@@ -944,7 +1181,7 @@
                 currentGame: 'crash',
                 crash: { multiplier: 1.00, crashPoint: 0, startTime: 0 },
                 limbo: { target: 2.00 },
-                mines: { grid: [], rows: 5, cols: 5, mineCount: 5, gemsFound: 0, payoutMultiplier: 1.0 },
+                mines: { grid: [], rows: 5, cols: 5, mineCount: 5, gemsFound: 0, payoutMultiplier: 1.0, pendingTiles: [], revealTimer: null },
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
@@ -1158,10 +1395,21 @@
             state.crash.multiplier = 1.00;
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
+            state.mines.revealedTiles = 0;
+            state.mines.pendingTiles = [];
+            if (state.mines.revealTimer) {
+                clearTimeout(state.mines.revealTimer);
+                state.mines.revealTimer = null;
+            }
             state.blackjack.status = 'betting';
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
+            
+            // Reset mines UI
+            if (state.currentGame === 'mines') {
+                updateMinesUI();
+            }
         }
 
         function endRun(wasBust = false) {
@@ -1392,9 +1640,16 @@
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
             state.mines.roundBet = state.currentRoundBet;
+            state.mines.revealedTiles = 0;
+            state.mines.totalTiles = state.mines.rows * state.mines.cols;
+            state.mines.totalGems = state.mines.totalTiles - state.mines.mineCount;
+            state.mines.pendingTiles = [];
+            state.mines.revealTimer = null;
+            
             generateMinesGrid();
             renderMinesGrid();
-            gameMessageEl.textContent = `Find the gems. Avoid the ${mineCount} mines.`;
+            updateMinesUI();
+            gameMessageEl.textContent = `Find the gems! Avoid the ${mineCount} mines.`;
         }
 
         function generateMinesGrid() {
@@ -1418,53 +1673,256 @@
                 tile.classList.add('mine-tile');
                 tile.dataset.index = index;
                 tile.addEventListener('click', () => onMineTileClick(tile, index));
+                
+                // Add subtle hover effect with random delay
+                tile.style.animationDelay = `${Math.random() * 0.5}s`;
+                
                 minesGridEl.appendChild(tile);
             });
         }
         
         function onMineTileClick(tile, index) {
-            if (!state.gameInProgress || tile.classList.contains('revealed')) return;
-            tile.classList.add('revealed');
-            if (state.mines.grid[index] === 'mine') {
-                tile.classList.add('mine');
-                tile.innerHTML = BOMB_SVG;
+            if (!state.gameInProgress || tile.classList.contains('revealed') || tile.classList.contains('pending')) return;
+            
+            // Play tile click sound
+            soundSystem.playTileClick();
+            
+            // Add tile to pending list and mark as pending
+            state.mines.pendingTiles.push({ tile, index });
+            tile.classList.add('pending');
+            
+            // Clear existing timer if any
+            if (state.mines.revealTimer) {
+                clearTimeout(state.mines.revealTimer);
+            }
+            
+            // Set new timer for 1 second
+            state.mines.revealTimer = setTimeout(() => {
+                revealPendingTiles();
+            }, 1000);
+            
+            // Show pending tiles count
+            gameMessageEl.textContent = `${state.mines.pendingTiles.length} tile${state.mines.pendingTiles.length > 1 ? 's' : ''} selected. Clicking more tiles will reset the timer.`;
+            gameMessageEl.style.color = '#60a5fa';
+        }
+        
+        function revealPendingTiles() {
+            if (state.mines.pendingTiles.length === 0) return;
+            
+            const pendingTiles = [...state.mines.pendingTiles];
+            state.mines.pendingTiles = [];
+            state.mines.revealTimer = null;
+            
+            // Show reveal message
+            gameMessageEl.textContent = 'Revealing tiles...';
+            gameMessageEl.style.color = '#fbbf24';
+            
+            // Brief pause for dramatic effect
+            setTimeout(() => {
+                processRevealedTiles(pendingTiles);
+            }, 300);
+        }
+        
+        function processRevealedTiles(pendingTiles) {
+            
+            let hasMine = false;
+            let gemsFound = 0;
+            
+            // Process all pending tiles
+            pendingTiles.forEach(({ tile, index }) => {
+                // Remove pending class and add revealed
+                tile.classList.remove('pending');
+                tile.classList.add('revealed');
+                state.mines.revealedTiles++;
+                
+                if (state.mines.grid[index] === 'mine') {
+                    // Hit a mine!
+                    hasMine = true;
+                    tile.classList.add('mine');
+                    tile.innerHTML = BOMB_SVG;
+                    
+                    // Play explosion sound
+                    soundSystem.playMineExplosion();
+                    
+                    // Add explosion particles
+                    addExplosionEffect(tile);
+                } else {
+                    // Found a gem!
+                    gemsFound++;
+                    tile.classList.add('gem');
+                    tile.innerHTML = '💎';
+                    
+                    // Add sparkle effects
+                    addSparkleEffects(tile);
+                    
+                    // Play gem discovery sound
+                    soundSystem.playGemDiscovery();
+                }
+            });
+            
+            // Update gems found count
+            state.mines.gemsFound += gemsFound;
+            
+            if (hasMine) {
+                // Game over - hit a mine
                 handleLoss(state.mines.roundBet);
                 resetGameRound();
-            } else {
-                tile.classList.add('gem');
-                tile.innerHTML = '💎';
-                state.mines.gemsFound++;
-                // Play win sound for finding a gem, using gemsFound as streak
-                soundSystem.playWin(state.mines.gemsFound);
-                const totalTiles = state.mines.rows * state.mines.cols;
-                const totalGems = totalTiles - state.mines.mineCount;
+            } else if (gemsFound > 0) {
+                // Calculate new multiplier with improved formula
+                const totalTiles = state.mines.totalTiles;
+                const totalGems = state.mines.totalGems;
+                const remainingGems = totalGems - state.mines.gemsFound;
+                const remainingTiles = totalTiles - state.mines.revealedTiles;
                 
                 let baseMultiplier;
-                if (totalGems - state.mines.gemsFound <= 0) {
+                if (remainingGems <= 0) {
+                    // Found all gems - jackpot!
                     baseMultiplier = 25;
                 } else {
-                    baseMultiplier = (1 - state.mines.mineCount / totalTiles) * (totalTiles / (totalGems - state.mines.gemsFound));
+                    // Progressive multiplier based on difficulty
+                    const gemRatio = remainingGems / remainingTiles;
+                    const mineRatio = state.mines.mineCount / totalTiles;
+                    baseMultiplier = (1 - mineRatio) / gemRatio;
+                    
+                    // Add bonus for finding multiple gems
+                    const streakBonus = Math.min(0.5, state.mines.gemsFound * 0.1);
+                    baseMultiplier += streakBonus;
                 }
 
+                // Apply difficulty scaling
                 if (state.mines.mineCount < 5) {
                     baseMultiplier = Math.max(0.1, baseMultiplier * 0.25);
+                } else if (state.mines.mineCount > 15) {
+                    baseMultiplier *= 1.5; // Bonus for high difficulty
                 }
 
                 state.mines.payoutMultiplier = baseMultiplier;
-
-                gameMessageEl.textContent = `Found ${state.mines.gemsFound} gems! Payout: ${state.mines.payoutMultiplier.toFixed(2)}x`;
+                
+                // Update UI with new multiplier
+                updateMinesUI();
+                
+                // Show encouraging message
+                const messages = [
+                    `Found ${state.mines.gemsFound} gems! Payout: ${state.mines.payoutMultiplier.toFixed(2)}x`,
+                    `Excellent! ${state.mines.gemsFound} gems found. Multiplier: ${state.mines.payoutMultiplier.toFixed(2)}x`,
+                    `Amazing! ${state.mines.gemsFound} gems! Current payout: ${state.mines.payoutMultiplier.toFixed(2)}x`,
+                    `Incredible! ${state.mines.gemsFound} gems discovered! ${state.mines.payoutMultiplier.toFixed(2)}x payout!`
+                ];
+                gameMessageEl.textContent = messages[Math.floor(Math.random() * messages.length)];
+                gameMessageEl.style.color = '#4ade80';
             }
+            
             updateUI();
         }
         
         function revealAllMines() {
-          const tiles = minesGridEl.children;
-          state.mines.grid.forEach((type, index) => {
-              if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
-                  tiles[index].classList.add('revealed', 'mine');
-                  tiles[index].innerHTML = BOMB_SVG;
-              }
-          });
+            // Clear any pending tiles and timers
+            if (state.mines.revealTimer) {
+                clearTimeout(state.mines.revealTimer);
+                state.mines.revealTimer = null;
+            }
+            
+            // Remove pending class from all pending tiles
+            state.mines.pendingTiles.forEach(({ tile }) => {
+                tile.classList.remove('pending');
+            });
+            state.mines.pendingTiles = [];
+            
+            const tiles = minesGridEl.children;
+            state.mines.grid.forEach((type, index) => {
+                if(type === 'mine' && !tiles[index].classList.contains('revealed')) {
+                    tiles[index].classList.add('revealed', 'mine');
+                    tiles[index].innerHTML = BOMB_SVG;
+                }
+            });
+        }
+
+        function updateMinesUI() {
+            // Update stats display
+            document.getElementById('minesGemsFound').textContent = state.mines.gemsFound;
+            document.getElementById('minesMinesLeft').textContent = state.mines.mineCount;
+            
+            // Update progress bar
+            const progressPercent = (state.mines.revealedTiles / state.mines.totalTiles) * 100;
+            document.getElementById('minesProgressBar').style.width = `${progressPercent}%`;
+            
+            // Update multiplier display
+            const multiplierEl = document.getElementById('minesCurrentMultiplier');
+            const multiplierDisplay = document.getElementById('minesMultiplierDisplay');
+            
+            multiplierEl.textContent = `${state.mines.payoutMultiplier.toFixed(2)}x`;
+            
+            // Add winning animation if multiplier is high
+            if (state.mines.payoutMultiplier > 2) {
+                multiplierDisplay.classList.add('winning');
+                setTimeout(() => {
+                    multiplierDisplay.classList.remove('winning');
+                }, 1000);
+            }
+        }
+
+        function addSparkleEffects(tile) {
+            // Add sparkle elements
+            for (let i = 0; i < 4; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'gem-sparkle';
+                tile.appendChild(sparkle);
+            }
+            
+            // Remove sparkles after animation
+            setTimeout(() => {
+                const sparkles = tile.querySelectorAll('.gem-sparkle');
+                sparkles.forEach(sparkle => sparkle.remove());
+            }, 1500);
+        }
+
+        function addExplosionEffect(tile) {
+            // Create explosion particles
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 4px;
+                    height: 4px;
+                    background: #ff6b6b;
+                    border-radius: 50%;
+                    pointer-events: none;
+                    animation: explode 0.8s ease-out forwards;
+                `;
+                
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 30 + Math.random() * 20;
+                const startX = 50 + Math.cos(angle) * distance;
+                const startY = 50 + Math.sin(angle) * distance;
+                
+                particle.style.left = `${startX}%`;
+                particle.style.top = `${startY}%`;
+                
+                tile.appendChild(particle);
+            }
+            
+            // Add explosion animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes explode {
+                    0% {
+                        transform: scale(0) translate(0, 0);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: scale(1) translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Clean up
+            setTimeout(() => {
+                const particles = tile.querySelectorAll('[style*="explode"]');
+                particles.forEach(p => p.remove());
+                style.remove();
+            }, 800);
         }
 
         function updateDiceUI() {
@@ -2050,6 +2508,17 @@
                 document.getElementById('diamondsMultiplier').textContent = '--';
                 document.getElementById('diamondsHand').textContent = 'Click Play to start';
                 document.getElementById('diamondsBoard').innerHTML = '';
+            }
+            if (gameName === 'mines') {
+                // Clear any existing timers and pending tiles
+                if (state.mines.revealTimer) {
+                    clearTimeout(state.mines.revealTimer);
+                    state.mines.revealTimer = null;
+                }
+                state.mines.pendingTiles = [];
+                
+                // Reset mines display
+                updateMinesUI();
             }
             renderHistoryBar();
             updateUI();
