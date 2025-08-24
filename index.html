@@ -618,8 +618,8 @@
             enabled: true,
             volume: 0.5,
             
-            // Generate a quick win sound (high pitch happy beep)
-            playWin(amount) {
+            // Generate a win sound (happy ascending beep)
+            playWin(streak = 1) {
                 if (!this.enabled) return;
                 const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
@@ -627,15 +627,16 @@
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
                 
-                // Higher pitch for bigger wins
-                const baseFreq = amount <= 100 ? 440 : amount <= 500 ? 550 : amount <= 2000 ? 660 : 880;
+                // Higher pitch and longer duration for streaks
+                const baseFreq = 440 * (1 + (streak * 0.2)); // Pitch increases with streak
+                const duration = 0.1 + (Math.min(streak, 5) * 0.05); // Longer for higher streaks
                 
                 osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
-                osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, audioContext.currentTime + 0.1);
+                osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, audioContext.currentTime + duration);
                 
                 gain.gain.setValueAtTime(0, audioContext.currentTime);
                 gain.gain.linearRampToValueAtTime(this.volume * 0.2, audioContext.currentTime + 0.01);
-                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+                gain.gain.exponentialRampToValueAtTime(this.volume * 0.05, audioContext.currentTime + duration);
                 
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.2);
@@ -1008,7 +1009,7 @@
                 winnings = roundBet * state.mines.payoutMultiplier;
                 message = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
             } else if (state.currentGame === 'flip') {
-                roundBet = state.flip.roundBet;
+                roundBet = state.currentRoundBet;
                 winnings = roundBet * state.flip.currentMultiplier;
                 message = `Cashed out ${formatCurrency(winnings, false)} after a ${state.flip.streak}-flip streak!`;
                 resetFlipGame(true); // Clear bet on cashout
@@ -1032,8 +1033,15 @@
             state.runStats[state.currentGame].wins++;
             state.runStats[state.currentGame].won += winnings;
             
-            // Play win sound based on amount
-            soundSystem.playWin(winnings);
+            // Play win sound - use streak for games with streak mechanics
+            let streak = 1;
+            if (state.currentGame === 'flip' && state.flip.streak) {
+                streak = state.flip.streak;
+            } else if (state.currentGame === 'mines' && state.mines.gemsFound) {
+                streak = state.mines.gemsFound;
+            }
+            soundSystem.playWin(streak);
+            
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
             updateLiveStatsUI();
             // award XP and show it under the money message
@@ -1367,6 +1375,8 @@
                 tile.classList.add('gem');
                 tile.innerHTML = '💎';
                 state.mines.gemsFound++;
+                // Play win sound for finding a gem, using gemsFound as streak
+                soundSystem.playWin(state.mines.gemsFound);
                 const totalTiles = state.mines.rows * state.mines.cols;
                 const totalGems = totalTiles - state.mines.mineCount;
                 
@@ -1806,6 +1816,8 @@
                     const winnings = roundBet * 1.95;
                     gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
                     gameMessageEl.style.color = '#4ade80';
+                    // Play win sound even for auto bets
+                    soundSystem.playWin(1);
                     handleWin(winnings, roundBet);
                     setTimeout(() => { 
                         resetGameRound();
@@ -1816,6 +1828,8 @@
                     state.flip.streak++;
                     state.flip.currentMultiplier *= 1.95;
                     state.flip.status = 'won';
+                    // Play win sound for building streak
+                    soundSystem.playWin(state.flip.streak);
                     flipResultText.textContent = `WIN! (${result.toUpperCase()})`;
                     flipResultText.style.color = '#4ade80';
                     updateUI(); // This will update the cashout button and message
@@ -1922,6 +1936,10 @@
                 placeBetBtn.classList.toggle('hidden', isStreak);
                 flipAgainBtn.classList.toggle('hidden', !isStreak);
                 flipAgainBtn.disabled = state.flip.status !== 'won';
+                // Enable cash out during a streak
+                if (isStreak) {
+                    cashOutBtn.disabled = false;
+                }
                 placeBetBtn.disabled = isStreak || controlsDisabled;
                 cashOutBtn.disabled = !isStreak;
 
@@ -2057,10 +2075,7 @@
             state.account.level = lvlInfo.level;
             state.account.xpInLevel = lvlInfo.xpInLevel;
             
-            // Play level up sound if level increased
-            if (state.account.level > oldLevel) {
-                soundSystem.playLevelUp();
-            }
+            // No sound on level up anymore
             saveAccount(state.account);
             return xpGained;
         }
