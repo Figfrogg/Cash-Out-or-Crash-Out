@@ -347,6 +347,122 @@
             75% { transform: scale(1.05) rotate(-2deg); }
             100% { transform: scale(1) rotate(0deg); }
         }
+        
+        /* HiLo Card Lineup */
+        .hilo-lineup-card {
+            width: 60px;
+            height: 84px;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            color: #1e293b;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            position: relative;
+        }
+        .hilo-lineup-card.red { 
+            color: #ef4444; 
+            background: linear-gradient(145deg, #ffffff, #fef2f2);
+        }
+        .hilo-lineup-card.face-down {
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border-color: #475569;
+            color: transparent !important;
+            position: relative;
+        }
+        .hilo-lineup-card.face-down::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(255,255,255,0.05) 0%, transparent 50%),
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255,255,255,0.02) 2px,
+                    rgba(255,255,255,0.02) 4px
+                );
+            border-radius: 6px;
+        }
+        .hilo-lineup-card.face-down::after {
+            content: '🂠';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            opacity: 0.8;
+            color: #94a3b8;
+            z-index: 10;
+        }
+        .hilo-lineup-card.current {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+            border-color: #3b82f6;
+            animation: lineupCardCurrent 1s ease-in-out infinite;
+        }
+        @keyframes lineupCardCurrent {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(59, 130, 246, 0.6); }
+            50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(59, 130, 246, 0.8); }
+        }
+        .hilo-lineup-card:hover {
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        .hilo-lineup-info {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.75rem;
+        }
+        .hilo-lineup-multiplier {
+            background: linear-gradient(145deg, #10b981, #059669);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .hilo-lineup-choice {
+            color: #94a3b8;
+            font-size: 0.7rem;
+        }
+        .hilo-lineup-choice.higher {
+            color: #10b981;
+        }
+        .hilo-lineup-choice.lower {
+            color: #ef4444;
+        }
+        
+        /* Card flip animation */
+        .card.flip {
+            animation: cardFlip 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes cardFlip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+        
+        /* Multiplier pulse animation */
+        .multiplier-pulse {
+            animation: multiplierPulse 0.5s ease-out;
+        }
+        @keyframes multiplierPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
         .card.blackjack {
             animation: cardBlackjack 1s ease-out;
             background: linear-gradient(145deg, #10b981, #059669);
@@ -676,6 +792,7 @@
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="mines">Mines</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="dice">Dice</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="hilo">HiLo</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="slide">Slide</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="diamonds">Diamonds</button>
@@ -751,6 +868,71 @@
                     </div>
                 </div>
                 <div id="blackjackHistory" class="live-history-bar"></div>
+            </div>
+            <div id="hiloGame" class="game-display hidden">
+                <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                    <div class="text-center mb-4">
+                        <h3 class="text-lg font-bold mb-2">HiLo Card Game</h3>
+                        <p class="text-sm text-slate-400">Guess if the next card is higher or lower than the current card</p>
+                    </div>
+                    
+                    <!-- Card Lineup -->
+                    <div class="w-full max-w-4xl mb-6">
+                        <h4 class="text-sm font-semibold text-slate-400 mb-3 text-center">Game History</h4>
+                        <div id="hiloCardLineup" class="flex justify-center gap-3 overflow-x-auto pb-4">
+                            <!-- Card lineup will be generated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Current Card Display -->
+                    <div class="text-center mb-4">
+                        <h4 class="text-sm font-semibold text-slate-400 mb-2">Current Card</h4>
+                        <div id="hiloCurrentCard" class="card mx-auto mb-2 hidden transform transition-all duration-500"></div>
+                        <div id="hiloNoCard" class="text-slate-500 text-lg">No card drawn yet</div>
+                    </div>
+                    
+                    <!-- Next Card Display -->
+                    <div class="text-center mb-4">
+                        <h4 class="text-sm font-semibold text-slate-400 mb-2">Next Card</h4>
+                        <div id="hiloNextCard" class="card hidden mx-auto mb-2 transform transition-all duration-500"></div>
+                        <div id="hiloNextCardHidden" class="card hidden mx-auto mb-2"></div>
+                    </div>
+                    
+                    <!-- Game Info -->
+                    <div class="text-center mb-4">
+                        <div class="text-lg font-bold text-green-400 mb-2 transform transition-all duration-300">
+                            <span id="hiloMultiplier">1.00x</span>
+                        </div>
+                        <div class="text-sm text-slate-400">
+                            Correct guesses: <span id="hiloCorrectGuesses">0</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Guess Buttons -->
+                    <div class="flex space-x-4 mb-4">
+                        <button id="hiloHigherBtn" class="btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-105">
+                            Higher or Same
+                            <div class="text-xs text-green-200" id="hiloHigherChance">50.00%</div>
+                            <div class="text-xs text-green-100 font-bold" id="hiloHigherMultiplier">+1.5x</div>
+                        </button>
+                        <button id="hiloLowerBtn" class="btn bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 hover:scale-105">
+                            Lower or Same
+                            <div class="text-xs text-red-200" id="hiloLowerChance">50.00%</div>
+                            <div class="text-xs text-red-100 font-bold" id="hiloLowerMultiplier">+1.5x</div>
+                        </button>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button id="hiloDrawCardBtn" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transform transition-all duration-200 hover:scale-105">
+                            Draw First Card
+                        </button>
+                        <button id="hiloCashOutBtn" class="btn bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-md hidden transform transition-all duration-200 hover:scale-105">
+                            Cash Out
+                        </button>
+                    </div>
+                </div>
+                <div id="hiloHistory" class="live-history-bar"></div>
             </div>
              <div id="kenoGame" class="game-display hidden">
                 <div class="flex flex-col md:flex-row items-start justify-center gap-6 h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-6">
@@ -1555,6 +1737,7 @@
                 mines: { grid: [], rows: 5, cols: 5, mineCount: 3, gemsFound: 0, payoutMultiplier: 1.0, pendingTiles: [], revealTimer: null },
                 dice: { betType: 'under', target: 50.00, multiplier: 2.00, winChance: 50.00 },
                 blackjack: { deck: [], playerHand: [], dealerHand: [], dealerVisibleHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
+                hilo: { deck: [], currentCard: null, nextCard: null, correctGuesses: 0, multiplier: 1.0, status: 'waiting', cardHistory: [] },
                 keno: { selectedNumbers: [] },
                 slide: { risk: 'easy' },
                 diamonds: { hand: [], colors: ['red', 'blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'cyan'], roundBet: 0 },
@@ -1566,12 +1749,13 @@
                     mines: createEmptyStats(),
                     dice: createEmptyStats(),
                     blackjack: createEmptyStats(),
+                    hilo: createEmptyStats(),
                     keno: createEmptyStats(),
                     slide: createEmptyStats(),
                     diamonds: createEmptyStats(),
                 },
                 history: {
-                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [], diamonds: [],
+                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], hilo: [], keno: [], slide: [], diamonds: [],
                 },
                 autoBet: {
                     isActive: false,
@@ -1662,6 +1846,7 @@
             if (state.currentGame === 'mines') startMinesGame();
             if (state.currentGame === 'dice') startDiceGame();
             if (state.currentGame === 'blackjack') startBlackjackGame();
+            if (state.currentGame === 'hilo') startHiloGame();
             if (state.currentGame === 'keno') startKenoGame();
             if (state.currentGame === 'slide') startSlideGame();
             if (state.currentGame === 'diamonds') startDiamondsGame();
@@ -1684,6 +1869,10 @@
                 roundBet = state.mines.roundBet || state.currentRoundBet;
                 winnings = roundBet * state.mines.payoutMultiplier;
                 message = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
+            } else if (state.currentGame === 'hilo') {
+                roundBet = state.hilo.roundBet || state.currentRoundBet;
+                winnings = roundBet * state.hilo.multiplier;
+                message = `Cashed out ${formatCurrency(winnings, false)} with ${state.hilo.correctGuesses} correct guesses!`;
             } else {
                 return; // Not a cash-outable game
             }
@@ -1781,6 +1970,7 @@
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
+            if (state.hilo) state.hilo.roundBet = 0;
             
             // Reset Keno state
             if (state.keno) {
@@ -2393,7 +2583,7 @@
             state.blackjack.playerHand = [];
             state.blackjack.dealerHand = [];
             state.blackjack.dealerVisibleHand = [];
-            state.blackjack.status = 'dealing';
+            state.blackjack.status = 'betting';
             state.blackjack.roundBet = state.currentRoundBet;
             
             // Clear hands
@@ -2703,6 +2893,334 @@
                 state.blackjack.dealerScore = calculateHandValue(state.blackjack.dealerHand);
                 dealerScoreEl.textContent = state.blackjack.dealerScore;
             }
+        }
+
+        // --- HiLo Logic ---
+
+        function startHiloGame() {
+            state.hilo.deck = createDeck();
+            shuffleDeck(state.hilo.deck);
+            state.hilo.currentCard = null;
+            state.hilo.nextCard = null;
+            state.hilo.correctGuesses = 0;
+            state.hilo.multiplier = 1.0;
+            state.hilo.status = 'waiting';
+            state.hilo.roundBet = state.currentRoundBet;
+            
+            // Reset UI
+            document.getElementById('hiloCurrentCard').classList.add('hidden');
+            document.getElementById('hiloNoCard').classList.remove('hidden');
+            document.getElementById('hiloNextCard').classList.add('hidden');
+            document.getElementById('hiloNextCardHidden').classList.add('hidden');
+            document.getElementById('hiloDrawCardBtn').classList.remove('hidden');
+            document.getElementById('hiloCashOutBtn').classList.add('hidden');
+            document.getElementById('hiloHigherBtn').disabled = true;
+            document.getElementById('hiloLowerBtn').disabled = true;
+            
+            // Generate card lineup
+            generateHiloCardLineup();
+            
+            updateHiloUI();
+            gameMessageEl.textContent = "Click 'Draw First Card' to start the game.";
+            gameMessageEl.style.color = '#e2e8f0';
+        }
+
+        function generateHiloCardLineup() {
+            const lineupContainer = document.getElementById('hiloCardLineup');
+            lineupContainer.innerHTML = '';
+            
+            // Create 8 face-down cards for the lineup
+            for (let i = 0; i < 8; i++) {
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'flex flex-col items-center';
+                
+                const card = document.createElement('div');
+                card.className = 'hilo-lineup-card face-down';
+                card.dataset.index = i;
+                
+                const info = document.createElement('div');
+                info.className = 'hilo-lineup-info';
+                info.innerHTML = `
+                    <div class="hilo-lineup-multiplier">--</div>
+                    <div class="hilo-lineup-choice">--</div>
+                `;
+                
+                cardContainer.appendChild(card);
+                cardContainer.appendChild(info);
+                lineupContainer.appendChild(cardContainer);
+            }
+        }
+
+        function drawFirstCard() {
+            if (state.hilo.status !== 'waiting') return;
+            
+            state.hilo.currentCard = state.hilo.deck.pop();
+            state.hilo.status = 'guessing';
+            
+            // Show current card with flip animation
+            const currentCardEl = document.getElementById('hiloCurrentCard');
+            currentCardEl.classList.remove('hidden');
+            currentCardEl.classList.add('flip');
+            currentCardEl.textContent = `${state.hilo.currentCard.rank}${state.hilo.currentCard.suit}`;
+            if (['♥', '♦'].includes(state.hilo.currentCard.suit)) {
+                currentCardEl.classList.add('red');
+            } else {
+                currentCardEl.classList.remove('red');
+            }
+            
+            // Remove flip animation after it completes
+            setTimeout(() => {
+                currentCardEl.classList.remove('flip');
+            }, 600);
+            
+            document.getElementById('hiloNoCard').classList.add('hidden');
+            document.getElementById('hiloDrawCardBtn').classList.add('hidden');
+            document.getElementById('hiloCashOutBtn').classList.remove('hidden');
+            
+            // Enable guess buttons
+            document.getElementById('hiloHigherBtn').disabled = false;
+            document.getElementById('hiloLowerBtn').disabled = false;
+            
+            // Add first card to history
+            state.hilo.cardHistory.push({
+                card: state.hilo.currentCard,
+                multiplier: 1.0,
+                choice: 'start'
+            });
+            
+            // Update card lineup
+            updateHiloCardLineup();
+            
+            updateHiloChances();
+            gameMessageEl.textContent = "Guess if the next card will be higher or lower!";
+            gameMessageEl.style.color = '#e2e8f0';
+        }
+
+        function updateHiloChances() {
+            if (!state.hilo.currentCard) return;
+            
+            const currentValue = getCardValue(state.hilo.currentCard);
+            const remainingCards = state.hilo.deck.length;
+            
+            let higherCount = 0;
+            let lowerCount = 0;
+            let sameCount = 0;
+            
+            // Count cards in deck
+            state.hilo.deck.forEach(card => {
+                const cardValue = getCardValue(card);
+                if (cardValue > currentValue) higherCount++;
+                else if (cardValue < currentValue) lowerCount++;
+                else sameCount++;
+            });
+            
+            const higherChance = ((higherCount + sameCount) / remainingCards) * 100;
+            const lowerChance = ((lowerCount + sameCount) / remainingCards) * 100;
+            
+            document.getElementById('hiloHigherChance').textContent = `${higherChance.toFixed(2)}%`;
+            document.getElementById('hiloLowerChance').textContent = `${lowerChance.toFixed(2)}%`;
+            
+            // Calculate and display multiplier increases
+            const higherMultiplier = higherChance < lowerChance ? 2.0 : 1.5;
+            const lowerMultiplier = lowerChance < higherChance ? 2.0 : 1.5;
+            
+            document.getElementById('hiloHigherMultiplier').textContent = `+${higherMultiplier.toFixed(1)}x`;
+            document.getElementById('hiloLowerMultiplier').textContent = `+${lowerMultiplier.toFixed(1)}x`;
+        }
+
+        function updateHiloCardLineup() {
+            const lineupCards = document.querySelectorAll('#hiloCardLineup .hilo-lineup-card');
+            const lineupInfos = document.querySelectorAll('#hiloCardLineup .hilo-lineup-info');
+            
+            lineupCards.forEach((card, index) => {
+                const cardContainer = card.parentElement;
+                const info = cardContainer.querySelector('.hilo-lineup-info');
+                
+                card.classList.remove('current', 'face-down');
+                card.classList.add('face-down');
+                
+                if (index < state.hilo.cardHistory.length) {
+                    // Show actual card from history
+                    const historyItem = state.hilo.cardHistory[index];
+                    card.classList.remove('face-down');
+                    card.textContent = `${historyItem.card.rank}${historyItem.card.suit}`;
+                    
+                    if (['♥', '♦'].includes(historyItem.card.suit)) {
+                        card.classList.add('red');
+                    } else {
+                        card.classList.remove('red');
+                    }
+                    
+                    // Update info
+                    info.innerHTML = `
+                        <div class="hilo-lineup-multiplier">${historyItem.multiplier.toFixed(2)}x</div>
+                        <div class="hilo-lineup-choice ${historyItem.choice === 'higher' ? 'higher' : historyItem.choice === 'lower' ? 'lower' : ''}">
+                            ${historyItem.choice === 'start' ? 'Start Card' : 
+                              historyItem.choice === 'higher' ? '↑ Higher' : 
+                              historyItem.choice === 'lower' ? '↓ Lower' : '--'}
+                        </div>
+                    `;
+                } else if (index === state.hilo.cardHistory.length) {
+                    // Current card (face down but highlighted)
+                    card.classList.add('current');
+                    info.innerHTML = `
+                        <div class="hilo-lineup-multiplier">${state.hilo.multiplier.toFixed(2)}x</div>
+                        <div class="hilo-lineup-choice">Current</div>
+                    `;
+                } else {
+                    // Future cards (face down)
+                    info.innerHTML = `
+                        <div class="hilo-lineup-multiplier">--</div>
+                        <div class="hilo-lineup-choice">--</div>
+                    `;
+                }
+            });
+        }
+
+        function makeHiloGuess(isHigher) {
+            if (state.hilo.status !== 'guessing') return;
+            
+            // Disable buttons during reveal
+            document.getElementById('hiloHigherBtn').disabled = true;
+            document.getElementById('hiloLowerBtn').disabled = true;
+            
+            // Draw next card
+            state.hilo.nextCard = state.hilo.deck.pop();
+            
+            // Show next card
+            const nextCardEl = document.getElementById('hiloNextCard');
+            nextCardEl.classList.remove('hidden');
+            nextCardEl.textContent = `${state.hilo.nextCard.rank}${state.hilo.nextCard.suit}`;
+            if (['♥', '♦'].includes(state.hilo.nextCard.suit)) {
+                nextCardEl.classList.add('red');
+            } else {
+                nextCardEl.classList.remove('red');
+            }
+            
+            // Play card deal sound
+            soundSystem.playCardDeal();
+            
+            setTimeout(() => {
+                const currentValue = getCardValue(state.hilo.currentCard);
+                const nextValue = getCardValue(state.hilo.nextCard);
+                
+                let correct = false;
+                if (isHigher) {
+                    correct = nextValue >= currentValue;
+                } else {
+                    correct = nextValue <= currentValue;
+                }
+                
+                if (correct) {
+                    // Correct guess!
+                    state.hilo.correctGuesses++;
+                    
+                    // Calculate multiplier based on the risk taken
+                    const higherChance = parseFloat(document.getElementById('hiloHigherChance').textContent);
+                    const lowerChance = parseFloat(document.getElementById('hiloLowerChance').textContent);
+                    
+                    let multiplierIncrease = 1.5; // Base increase
+                    
+                    // If player chose the lower percentage option, give bonus multiplier
+                    if (isHigher && higherChance < lowerChance) {
+                        // Chose higher when it was less likely
+                        multiplierIncrease = 2.0;
+                    } else if (!isHigher && lowerChance < higherChance) {
+                        // Chose lower when it was less likely
+                        multiplierIncrease = 2.0;
+                    }
+                    
+                    state.hilo.multiplier = Math.pow(multiplierIncrease, state.hilo.correctGuesses);
+                    
+                    // Animate the next card as winning
+                    nextCardEl.classList.add('blackjack');
+                    
+                    // Animate multiplier with pulse effect
+                    const multiplierEl = document.getElementById('hiloMultiplier');
+                    multiplierEl.classList.add('multiplier-pulse');
+                    setTimeout(() => multiplierEl.classList.remove('multiplier-pulse'), 500);
+                    
+                    const riskBonus = multiplierIncrease > 1.5 ? " (Risk Bonus!)" : "";
+                    gameMessageEl.textContent = `Correct! ${state.hilo.nextCard.rank}${state.hilo.nextCard.suit} is ${isHigher ? 'higher' : 'lower'} than ${state.hilo.currentCard.rank}${state.hilo.currentCard.suit}. Multiplier: ${state.hilo.multiplier.toFixed(2)}x${riskBonus}`;
+                    gameMessageEl.style.color = '#4ade80';
+                    
+                    // Play win sound
+                    soundSystem.playWin(state.hilo.correctGuesses);
+                    
+                    // Add the next card to history
+                    state.hilo.cardHistory.push({
+                        card: state.hilo.nextCard,
+                        multiplier: state.hilo.multiplier,
+                        choice: isHigher ? 'higher' : 'lower'
+                    });
+                    
+                    // Move to next round
+                    state.hilo.currentCard = state.hilo.nextCard;
+                    state.hilo.nextCard = null;
+                    
+                    // Update current card display with flip animation
+                    const currentCardEl = document.getElementById('hiloCurrentCard');
+                    currentCardEl.classList.add('flip');
+                    currentCardEl.textContent = `${state.hilo.currentCard.rank}${state.hilo.currentCard.suit}`;
+                    if (['♥', '♦'].includes(state.hilo.currentCard.suit)) {
+                        currentCardEl.classList.add('red');
+                    } else {
+                        currentCardEl.classList.remove('red');
+                    }
+                    
+                    // Remove flip animation after it completes
+                    setTimeout(() => {
+                        currentCardEl.classList.remove('flip');
+                    }, 600);
+                    
+                    // Hide next card
+                    nextCardEl.classList.add('hidden');
+                    nextCardEl.classList.remove('blackjack');
+                    
+                    // Re-enable buttons
+                    document.getElementById('hiloHigherBtn').disabled = false;
+                    document.getElementById('hiloLowerBtn').disabled = false;
+                    
+                    updateHiloChances();
+                    updateHiloCardLineup();
+                    updateHiloUI();
+                } else {
+                    // Wrong guess - game over
+                    nextCardEl.classList.add('bust');
+                    
+                    gameMessageEl.textContent = `Wrong! ${state.hilo.nextCard.rank}${state.hilo.nextCard.suit} is ${nextValue > currentValue ? 'higher' : 'lower'} than ${state.hilo.currentCard.rank}${state.hilo.currentCard.suit}. Game over!`;
+                    gameMessageEl.style.color = '#ef4444';
+                    
+                    // Play loss sound
+                    soundSystem.playLoss();
+                    
+                    // Calculate winnings (0 if busted)
+                    const winnings = 0;
+                    handleLoss(state.hilo.roundBet);
+                    
+                    setTimeout(() => {
+                        resetGameRound();
+                        updateUI();
+                    }, 2000);
+                }
+            }, 1000);
+        }
+
+        function hiloCashOut() {
+            if (state.hilo.status !== 'guessing' || state.hilo.correctGuesses === 0) return;
+            
+            const winnings = state.hilo.roundBet * state.hilo.multiplier;
+            gameMessageEl.textContent = `Cashed out with ${state.hilo.correctGuesses} correct guesses! Won ${formatCurrency(winnings, false)}!`;
+            gameMessageEl.style.color = '#4ade80';
+            
+            handleWin(winnings, state.hilo.roundBet);
+            resetGameRound();
+            updateUI();
+        }
+
+        function updateHiloUI() {
+            document.getElementById('hiloMultiplier').textContent = `${state.hilo.multiplier.toFixed(2)}x`;
+            document.getElementById('hiloCorrectGuesses').textContent = state.hilo.correctGuesses;
         }
 
         // --- Keno Logic ---
@@ -3071,7 +3589,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'diamonds', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'hilo', 'keno', 'slide', 'diamonds', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -3128,7 +3646,7 @@
             const controlsDisabled = state.gameInProgress || isAutoBetting;
 
             placeBetBtn.disabled = controlsDisabled;
-            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines'].includes(state.currentGame) || isAutoBetting;
+            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines', 'hilo'].includes(state.currentGame) || isAutoBetting;
             betAmountInput.disabled = controlsDisabled;
             mineCountInput.disabled = controlsDisabled;
             diceSlider.disabled = controlsDisabled;
@@ -3173,6 +3691,23 @@
                 document.getElementById('diamondsMultiplier').textContent = '--';
                 document.getElementById('diamondsHand').textContent = 'Click Play to start';
                 document.getElementById('diamondsBoard').innerHTML = '';
+            }
+            if (gameName === 'hilo') {
+                // Reset HiLo display
+                document.getElementById('hiloCurrentCard').classList.add('hidden');
+                document.getElementById('hiloNoCard').classList.remove('hidden');
+                document.getElementById('hiloNextCard').classList.add('hidden');
+                document.getElementById('hiloNextCardHidden').classList.add('hidden');
+                document.getElementById('hiloDrawCardBtn').classList.remove('hidden');
+                document.getElementById('hiloCashOutBtn').classList.add('hidden');
+                document.getElementById('hiloHigherBtn').disabled = true;
+                document.getElementById('hiloLowerBtn').disabled = true;
+                document.getElementById('hiloMultiplier').textContent = '1.00x';
+                document.getElementById('hiloCorrectGuesses').textContent = '0';
+                document.getElementById('hiloHigherMultiplier').textContent = '+1.5x';
+                document.getElementById('hiloLowerMultiplier').textContent = '+1.5x';
+                // Generate card lineup
+                generateHiloCardLineup();
             }
             if (gameName === 'mines') {
                 // Clear any existing timers and pending tiles
@@ -3223,7 +3758,7 @@
             // Persist run stats into the current account's lifetimeStats
             if (!state.account || !state.account.username) return;
             if (!state.account.lifetimeStats) state.account.lifetimeStats = {};
-            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'diamonds'];
+            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'hilo', 'keno', 'slide', 'diamonds'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
                 if (!run) return;
@@ -3350,7 +3885,7 @@
             }
             const acct = state.account;
             document.getElementById('accountSummaryBody').innerHTML = `<div>Username: <strong>${acct.username}</strong></div><div>Level: <strong>${acct.level || 0}</strong></div><div>XP: <strong>${acct.xp || 0}</strong></div><div>Total Runs: <strong>${acct.totalRuns || 0}</strong></div>`;
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'diamonds', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'hilo', 'keno', 'slide', 'diamonds', 'overall'];
             const lifeStats = acct.lifetimeStats || {};
             games.forEach(gameKey => {
                 const stats = lifeStats[gameKey] || createEmptyStats();
@@ -3469,6 +4004,12 @@
         });
         hitBtn.addEventListener('click', blackjackHit);
         standBtn.addEventListener('click', blackjackStand);
+        
+        // HiLo event listeners
+        document.getElementById('hiloDrawCardBtn').addEventListener('click', drawFirstCard);
+        document.getElementById('hiloCashOutBtn').addEventListener('click', hiloCashOut);
+        document.getElementById('hiloHigherBtn').addEventListener('click', () => makeHiloGuess(true));
+        document.getElementById('hiloLowerBtn').addEventListener('click', () => makeHiloGuess(false));
         
         lifetimeStatsBtn.addEventListener('click', () => {
             pauseRun();
