@@ -1996,39 +1996,28 @@
                 handleLoss(state.mines.roundBet);
                 resetGameRound();
             } else if (gemsFound > 0) {
-                // Calculate new multiplier with improved formula
+                // Calculate exponential multiplier based on gems found
                 const totalTiles = state.mines.totalTiles;
                 const totalGems = state.mines.totalGems;
-                const remainingGems = totalGems - state.mines.gemsFound;
-                const remainingTiles = totalTiles - state.mines.revealedTiles;
+                const mineRatio = state.mines.mineCount / totalTiles;
                 
-                let baseMultiplier;
-                if (remainingGems <= 0) {
-                    // Found all gems - jackpot!
-                    baseMultiplier = 25;
+                // Base multiplier starts at 1.0
+                let baseMultiplier = 1.0;
+                
+                // Heavy nerf for games with fewer than 3 mines
+                if (state.mines.mineCount < 3) {
+                    // Very low multipliers for easy games
+                    baseMultiplier = 1.0 + (state.mines.gemsFound * 0.1);
                 } else {
-                    // Progressive multiplier based on difficulty
-                    const gemRatio = remainingGems / remainingTiles;
-                    const mineRatio = state.mines.mineCount / totalTiles;
-                    baseMultiplier = (1 - mineRatio) / gemRatio;
+                    // Exponential growth: each gem multiplies the previous value
+                    // Formula: baseMultiplier = 1.0 * (1.2 + mineRatio * 0.5)^gemsFound
+                    // This creates more balanced exponential growth that scales with mine difficulty
+                    const growthFactor = 1.2 + (mineRatio * 0.5);
+                    baseMultiplier = Math.pow(growthFactor, state.mines.gemsFound);
                     
-                    // Add bonus for finding multiple gems
-                    const streakBonus = Math.min(0.5, state.mines.gemsFound * 0.1);
-                    baseMultiplier += streakBonus;
-                }
-
-                // Apply mine count scaling (3 mines is baseline)
-                const defaultMines = 3;
-                const mineCountRatio = state.mines.mineCount / defaultMines;
-                
-                // Scale multiplier based on mine count
-                // More mines = higher multiplier, fewer mines = lower multiplier
-                if (mineCountRatio > 1) {
-                    // More mines than default - increase multiplier
-                    baseMultiplier *= Math.pow(mineCountRatio, 0.8); // Gradual increase
-                } else if (mineCountRatio < 1) {
-                    // Fewer mines than default - decrease multiplier
-                    baseMultiplier *= Math.pow(mineCountRatio, 1.2); // Gradual decrease
+                    // Add a small bonus for consecutive finds to make it more exciting
+                    const consecutiveBonus = Math.min(0.1, state.mines.gemsFound * 0.01);
+                    baseMultiplier += consecutiveBonus;
                 }
                 
                 // Ensure minimum multiplier
