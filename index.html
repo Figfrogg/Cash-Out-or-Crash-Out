@@ -2729,6 +2729,9 @@
                         state.blackjack.status = 'playerTurn';
                         gameMessageEl.textContent = "Your turn. Hit or Stand?";
                         gameMessageEl.style.color = '#e2e8f0';
+                        // Ensure buttons are enabled
+                        hitBtn.disabled = false;
+                        standBtn.disabled = false;
                         updateUI();
                     }
                 }
@@ -2828,7 +2831,6 @@
                     // Re-enable buttons
                     hitBtn.disabled = false;
                     standBtn.disabled = false;
-                    updateUI();
                 }
             }, 500);
         }
