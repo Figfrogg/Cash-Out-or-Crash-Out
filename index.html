@@ -290,27 +290,149 @@
         #kenoGrid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
-            gap: 4px;
+            gap: 6px;
+            max-width: 600px;
+            margin: 0 auto;
         }
         .keno-tile {
-            background-color: #475569;
-            border-radius: 4px;
+            background: linear-gradient(145deg, #475569, #334155);
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-align: center;
-            padding: 4px 0;
-            font-size: 0.8rem;
+            padding: 12px 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .keno-tile:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            border-color: #60a5fa;
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+        }
+        .keno-tile:active {
+            transform: scale(0.98);
         }
         .keno-tile.selected {
-            background-color: #4f46e5;
+            background: linear-gradient(145deg, #4f46e5, #3730a3);
+            border-color: #818cf8;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
+            animation: kenoSelectedPulse 2s ease-in-out infinite;
         }
         .keno-tile.hit {
-            background-color: #10b981;
+            background: linear-gradient(145deg, #10b981, #059669);
+            border-color: #34d399;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+            animation: kenoHitReveal 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
         .keno-tile.miss {
-            background-color: #ef4444;
-            opacity: 0.5;
+            background: linear-gradient(145deg, #ef4444, #dc2626);
+            border-color: #f87171;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+            opacity: 0.7;
+            animation: kenoMissReveal 0.6s ease-out;
         }
+        .keno-tile.drawing {
+            animation: kenoDrawing 0.3s ease-in-out;
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            border-color: #fbbf24;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+        }
+        .keno-tile::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+        .keno-tile:hover::before {
+            transform: translateX(100%);
+        }
+        .keno-tile .keno-sparkle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: kenoSparkle 1.2s infinite;
+        }
+        .keno-tile .keno-sparkle:nth-child(1) { top: 15%; left: 15%; animation-delay: 0s; }
+        .keno-tile .keno-sparkle:nth-child(2) { top: 15%; right: 15%; animation-delay: 0.2s; }
+        .keno-tile .keno-sparkle:nth-child(3) { bottom: 15%; left: 15%; animation-delay: 0.4s; }
+        .keno-tile .keno-sparkle:nth-child(4) { bottom: 15%; right: 15%; animation-delay: 0.6s; }
+        
+        @keyframes kenoSelectedPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        @keyframes kenoHitReveal {
+            0% { transform: scale(0.8) rotate(-5deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes kenoMissReveal {
+            0% { transform: scale(1.1); }
+            50% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        @keyframes kenoDrawing {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes kenoSparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        
+        .keno-payouts {
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        .keno-payout-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #475569;
+            transition: all 0.2s ease;
+        }
+        .keno-payout-row:hover {
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 4px;
+        }
+        .keno-payout-row:last-child {
+            border-bottom: none;
+        }
+        .keno-payout-multiplier {
+            font-weight: bold;
+            color: #10b981;
+        }
+        .keno-payout-row.active .keno-payout-multiplier {
+            color: #fbbf24;
+            animation: kenoPayoutGlow 1s ease-in-out infinite;
+        }
+        @keyframes kenoPayoutGlow {
+            0%, 100% { text-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
+            50% { text-shadow: 0 0 15px rgba(251, 191, 36, 0.8); }
+        }
+        
+
         #slideReelContainer {
             overflow: hidden;
             position: relative;
@@ -553,9 +675,9 @@
                 <div id="blackjackHistory" class="live-history-bar"></div>
             </div>
              <div id="kenoGame" class="game-display hidden">
-                <div class="flex flex-col md:flex-row items-start justify-center gap-4 h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4">
+                <div class="flex flex-col md:flex-row items-start justify-center gap-6 h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-6">
                     <div id="kenoGrid" class="flex-grow"></div>
-                    <div id="kenoPayouts" class="w-full md:w-48 text-xs bg-slate-800 p-2 rounded"></div>
+                    <div id="kenoPayouts" class="w-full md:w-56 text-sm keno-payouts"></div>
                 </div>
                 <div id="kenoHistory" class="live-history-bar"></div>
             </div>
@@ -691,6 +813,7 @@
             </div>
 
              <div class="mt-6 flex justify-center space-x-4">
+                <button id="soundToggleBtn" class="btn bg-slate-600 hover:bg-slate-700 font-bold py-3 px-6 rounded-md">🔊 Sound On</button>
                 <button id="viewStatsBtn" class="btn bg-indigo-600 hover:bg-indigo-700 font-bold py-3 px-8 rounded-md">View Stats</button>
                 <button id="endRunBtn" class="btn btn-danger font-bold py-3 px-8 rounded-md">End Run</button>
             </div>
@@ -1038,6 +1161,101 @@
                 
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.1);
+            },
+
+            // Generate a Keno number selection sound
+            playKenoSelect() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sine';
+                
+                // Pleasant selection sound
+                osc.frequency.setValueAtTime(800, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(1000, audioContext.currentTime + 0.15);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.12, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.15);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.15);
+            },
+
+            // Generate a Keno number draw sound
+            playKenoDraw() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'triangle';
+                
+                // Exciting draw sound
+                osc.frequency.setValueAtTime(400, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.15, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.2);
+            },
+
+            // Generate a Keno hit sound
+            playKenoHit() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sine';
+                
+                // Victory hit sound
+                osc.frequency.setValueAtTime(600, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+                osc.frequency.setValueAtTime(800, audioContext.currentTime + 0.1);
+                osc.frequency.linearRampToValueAtTime(1400, audioContext.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.18, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.18, audioContext.currentTime + 0.2);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.3);
+            },
+
+            // Generate a Keno miss sound
+            playKenoMiss() {
+                if (!this.enabled) return;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sawtooth';
+                
+                // Disappointing miss sound
+                osc.frequency.setValueAtTime(300, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(150, audioContext.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(this.volume * 0.1, audioContext.currentTime + 0.01);
+                gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.2);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.2);
             },
             
             // Toggle sound on/off
@@ -1406,9 +1624,19 @@
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
             
+            // Reset Keno state
+            if (state.keno) {
+                state.keno.lastHits = null;
+            }
+            
             // Reset mines UI
             if (state.currentGame === 'mines') {
                 updateMinesUI();
+            }
+            
+            // Reset Keno UI
+            if (state.currentGame === 'keno') {
+                updateKenoPayouts();
             }
         }
 
@@ -2121,9 +2349,18 @@
                 tile.classList.add('keno-tile');
                 tile.textContent = i;
                 tile.dataset.number = i;
+                
+                // Add sparkle effects for selected tiles
                 if (state.keno.selectedNumbers.includes(i)) {
                     tile.classList.add('selected');
+                    // Add sparkle elements
+                    for (let j = 0; j < 4; j++) {
+                        const sparkle = document.createElement('div');
+                        sparkle.className = 'keno-sparkle';
+                        tile.appendChild(sparkle);
+                    }
                 }
+                
                 tile.addEventListener('click', () => onKenoTileClick(i));
                 kenoGridEl.appendChild(tile);
             }
@@ -2133,6 +2370,10 @@
             if (state.gameInProgress) return;
             const { selectedNumbers } = state.keno;
             const index = selectedNumbers.indexOf(number);
+            
+            // Play selection sound
+            soundSystem.playKenoSelect();
+            
             if (index > -1) {
                 selectedNumbers.splice(index, 1);
             } else if (selectedNumbers.length < 10) {
@@ -2144,12 +2385,20 @@
 
         function updateKenoPayouts() {
             const numSelected = state.keno.selectedNumbers.length;
-            kenoPayoutsEl.innerHTML = `<h4 class="font-bold mb-1 text-center">Payouts (${numSelected} picks)</h4>`;
+            kenoPayoutsEl.innerHTML = `<h4 class="font-bold mb-3 text-center text-slate-200">Payouts (${numSelected} picks)</h4>`;
             if (numSelected > 0) {
                 const payouts = KENO_PAYOUTS[numSelected];
                 for (const hits in payouts) {
-                    kenoPayoutsEl.innerHTML += `<div class="flex justify-between"><span>Hits: ${hits}</span><span class="font-semibold">${payouts[hits]}x</span></div>`;
+                    const multiplier = payouts[hits];
+                    const isActive = state.keno.lastHits === parseInt(hits);
+                    kenoPayoutsEl.innerHTML += `
+                        <div class="keno-payout-row ${isActive ? 'active' : ''}">
+                            <span class="text-slate-300">Hits: ${hits}</span>
+                            <span class="keno-payout-multiplier">${multiplier}x</span>
+                        </div>`;
                 }
+            } else {
+                kenoPayoutsEl.innerHTML += `<div class="text-center text-slate-400 mt-4">Select numbers to see payouts</div>`;
             }
         }
 
@@ -2179,36 +2428,61 @@
             const payoutMultiplier = payoutsForSelection[numHits] || 0;
             const roundBet = state.currentRoundBet;
 
+            // Store hits for payout highlighting
+            state.keno.lastHits = numHits;
+
+            gameMessageEl.textContent = "Drawing numbers...";
+            gameMessageEl.style.color = '#fbbf24';
+
             let i = 0;
             const drawInterval = setInterval(() => {
                 const drawn = drawnNumbers[i];
                 const tile = kenoGridEl.querySelector(`[data-number="${drawn}"]`);
-                if (hits.includes(drawn)) {
-                    tile.classList.add('hit');
-                } else {
-                    tile.classList.add('miss');
-                }
+                
+                // Add drawing animation class
+                tile.classList.add('drawing');
+                
+                // Play draw sound
+                soundSystem.playKenoDraw();
+                
+                setTimeout(() => {
+                    tile.classList.remove('drawing');
+                    if (hits.includes(drawn)) {
+                        tile.classList.add('hit');
+                        soundSystem.playKenoHit();
+                    } else {
+                        tile.classList.add('miss');
+                        soundSystem.playKenoMiss();
+                    }
+                }, 300);
+                
                 i++;
                 if (i >= drawnNumbers.length) {
                     clearInterval(drawInterval);
-                    if (payoutMultiplier > 0) {
-                        const winnings = roundBet * payoutMultiplier;
-                        gameMessageEl.textContent = `You hit ${numHits} numbers and won ${formatCurrency(winnings, false)}!`;
-                        gameMessageEl.style.color = '#4ade80';
-                        handleWin(winnings, roundBet);
-                    } else {
-                        gameMessageEl.textContent = `You hit ${numHits} numbers and lost.`;
-                        gameMessageEl.style.color = '#ef4444';
-                        handleLoss(roundBet);
-                    }
+                    
+                    // Update payouts to highlight the winning row
+                    updateKenoPayouts();
+                    
                     setTimeout(() => {
-                         if (!state.autoBet.isActive) {
-                             resetGameRound();
-                             updateUI();
-                         }
-                    }, 2000);
+                        if (payoutMultiplier > 0) {
+                            const winnings = roundBet * payoutMultiplier;
+                            gameMessageEl.textContent = `You hit ${numHits} numbers and won ${formatCurrency(winnings, false)}!`;
+                            gameMessageEl.style.color = '#4ade80';
+                            handleWin(winnings, roundBet);
+                        } else {
+                            gameMessageEl.textContent = `You hit ${numHits} numbers and lost.`;
+                            gameMessageEl.style.color = '#ef4444';
+                            handleLoss(roundBet);
+                        }
+                        setTimeout(() => {
+                             if (!state.autoBet.isActive) {
+                                 resetGameRound();
+                                 updateUI();
+                             }
+                        }, 2000);
+                    }, 500);
                 }
-            }, 100);
+            }, 400);
         }
 
         // --- Slide Logic ---
@@ -2512,6 +2786,10 @@
             if (gameName === 'keno') {
                 renderKenoBoard();
                 updateKenoPayouts();
+                // Clear any previous game state
+                if (state.keno) {
+                    state.keno.lastHits = null;
+                }
             }
             if (gameName === 'diamonds') {
                 // Reset diamonds display
@@ -2859,6 +3137,15 @@
         
         autoResetOnWin.addEventListener('click', () => autoOnWinValueInput.value = '' );
         autoResetOnLoss.addEventListener('click', () => autoOnLossValueInput.value = '' );
+
+        // Sound toggle button
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        soundToggleBtn.addEventListener('click', () => {
+            const enabled = soundSystem.toggle();
+            soundToggleBtn.textContent = enabled ? '🔊 Sound On' : '🔇 Sound Off';
+            soundToggleBtn.classList.toggle('bg-slate-600', enabled);
+            soundToggleBtn.classList.toggle('bg-slate-500', !enabled);
+        });
 
     // Initial Load
         // Prefill last username in login box for convenience (do not auto-login)
