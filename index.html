@@ -2667,6 +2667,7 @@
         }
 
         function dealBlackjackCards() {
+            state.blackjack.status = 'dealing';
             let cardIndex = 0;
             const dealInterval = setInterval(() => {
                 if (cardIndex < 4) {
