@@ -859,7 +859,7 @@
             <div id="blackjackGame" class="game-display hidden">
                 <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
                     <div>
-                        <h3 class="text-center font-bold">Dealer's Hand (<span id="dealerScore">0</span>)</h3>
+                        <h3 class="text-center font-bold">Dealer's Hand</h3>
                         <div id="dealerHand" class="hand-container"></div>
                     </div>
                      <div>
@@ -1647,7 +1647,7 @@
         const standBtn = document.getElementById('standBtn');
         const dealerHandEl = document.getElementById('dealerHand');
         const playerHandEl = document.getElementById('playerHand');
-        const dealerScoreEl = document.getElementById('dealerScore');
+
         const playerScoreEl = document.getElementById('playerScore');
         const kenoGridEl = document.getElementById('kenoGrid');
         const kenoPayoutsEl = document.getElementById('kenoPayouts');
@@ -2012,8 +2012,7 @@
             }
             state.blackjack.status = 'betting';
             state.blackjack.dealerVisibleHand = [];
-            // Reset dealer score display
-            dealerScoreEl.textContent = '?';
+
             // Clear any card animations
             document.querySelectorAll('.card.bust, .card.blackjack, .card.dealt').forEach(card => {
                 card.classList.remove('bust', 'blackjack', 'dealt');
@@ -2682,7 +2681,6 @@
             playerHandEl.innerHTML = '';
             dealerHandEl.innerHTML = '';
             playerScoreEl.textContent = '0';
-            dealerScoreEl.textContent = '?';
             
             gameMessageEl.textContent = "Dealing cards...";
             gameMessageEl.style.color = '#fbbf24';
@@ -2979,14 +2977,9 @@
             
             playerScoreEl.textContent = state.blackjack.playerScore;
             
-            // Only show dealer score when player is done and all cards are revealed
-            if (state.blackjack.status === 'playerTurn' || state.blackjack.status === 'dealing') {
-                // During player turn or dealing - don't show dealer score at all
-                dealerScoreEl.textContent = '?';
-            } else {
-                // Show full dealer score when game is over
+            // Calculate dealer score for game logic but don't display it
+            if (state.blackjack.status !== 'playerTurn' && state.blackjack.status !== 'dealing') {
                 state.blackjack.dealerScore = calculateHandValue(state.blackjack.dealerHand);
-                dealerScoreEl.textContent = state.blackjack.dealerScore;
             }
         }
 
