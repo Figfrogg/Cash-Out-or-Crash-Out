@@ -261,41 +261,6 @@
             background-color: #ef4444;
             color: #ffffff;
         }
-         /* New Styles for Flip game */
-        #flipCoinContainer {
-            perspective: 1000px;
-            width: 100px;
-            height: 100px;
-        }
-        #flipCoin {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 1.5s cubic-bezier(0.45, 0, 0.55, 1);
-        }
-        .coin-face {
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            font-weight: 900;
-            border: 5px solid #94a3b8;
-            color: #e2e8f0;
-        }
-        .coin-heads {
-            background: linear-gradient(145deg, #f9a825, #f57f17); /* Gold-ish */
-        }
-        .coin-tails {
-            background: linear-gradient(145deg, #78909c, #455a64); /* Silver-ish */
-            transform: rotateY(180deg);
-        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
@@ -338,7 +303,6 @@
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="slide">Slide</button>
-                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="flip">Flip</button>
             </div>
 
             <!-- Game Displays -->
@@ -403,18 +367,6 @@
                 </div>
                 <div id="slideHistory" class="live-history-bar"></div>
             </div>
-             <div id="flipGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-64 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
-                    <div id="flipCoinContainer">
-                        <div id="flipCoin">
-                            <div class="coin-face coin-heads">H</div>
-                            <div class="coin-face coin-tails">T</div>
-                        </div>
-                    </div>
-                    <div id="flipResultText" class="text-xl font-bold h-6"></div>
-                </div>
-                <div id="flipHistory" class="live-history-bar"></div>
-            </div>
             
             <div class="text-center mt-2 mb-4">
                 <p id="gameMessage" class="text-lg text-center text-slate-400 mb-1 h-8">&nbsp;</p>
@@ -445,13 +397,6 @@
                             <div id="diceControls" class="mt-2 hidden">
                                 <button id="diceBetTypeBtn" class="w-full btn bg-green-600 text-white font-bold py-2 rounded-md">Roll Under 50.00</button>
                             </div>
-                             <div id="flipControls" class="mt-2 hidden">
-                                <label class="block text-sm font-medium mb-1 text-slate-400">Your Pick</label>
-                                <div class="flex space-x-2">
-                                    <button class="risk-btn btn flex-1 active" data-choice="heads">Heads</button>
-                                    <button class="risk-btn btn flex-1" data-choice="tails">Tails</button>
-                                </div>
-                            </div>
                             <div id="blackjackControls" class="mt-2 hidden flex space-x-2">
                                 <button id="hitBtn" class="w-full btn bg-yellow-500 text-slate-900 font-bold py-2 rounded-md">Hit</button>
                                 <button id="standBtn" class="w-full btn bg-blue-500 text-white font-bold py-2 rounded-md">Stand</button>
@@ -467,7 +412,6 @@
                             </div>
                         </div>
                         <div class="flex flex-col space-y-2">
-                             <button id="flipAgainBtn" class="w-full btn btn-primary font-bold py-3 rounded-md hidden">Flip Again</button>
                              <button id="placeBetBtn" class="w-full btn btn-primary font-bold py-3 rounded-md">Place Bet</button>
                              <button id="cashOutBtn" class="w-full btn btn-secondary font-bold py-3 rounded-md" disabled>Cash Out</button>
                         </div>
@@ -824,12 +768,7 @@
         const limboTargetInput = document.getElementById('limboTarget');
         const limboWinChanceEl = document.getElementById('limboWinChance');
         const limboResultDisplay = document.getElementById('limboResultDisplay');
-        const flipControls = document.getElementById('flipControls');
-        const flipChoiceBtns = document.querySelectorAll('#flipControls .risk-btn');
-        const flipCoin = document.getElementById('flipCoin');
-        const flipResultText = document.getElementById('flipResultText');
-        const flipAgainBtn = document.getElementById('flipAgainBtn');
-        
+
         // New Auto Bet DOM Elements
         const manualBetTab = document.getElementById('manualBetTab');
         const autoBetTab = document.getElementById('autoBetTab');
@@ -904,7 +843,6 @@
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
                 slide: { risk: 'easy' },
-                flip: { choice: 'heads', streak: 0, currentMultiplier: 1.0, status: 'betting' },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -915,10 +853,9 @@
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
                     slide: createEmptyStats(),
-                    flip: createEmptyStats(),
                 },
                 history: {
-                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [], flip: [],
+                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [],
                 },
                 autoBet: {
                     isActive: false,
@@ -1011,7 +948,6 @@
             if (state.currentGame === 'blackjack') startBlackjackGame();
             if (state.currentGame === 'keno') startKenoGame();
             if (state.currentGame === 'slide') startSlideGame();
-            if (state.currentGame === 'flip') startFlipGame();
             
             updateUI();
         }
@@ -1031,11 +967,6 @@
                 roundBet = state.mines.roundBet || state.currentRoundBet;
                 winnings = roundBet * state.mines.payoutMultiplier;
                 message = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
-            } else if (state.currentGame === 'flip') {
-                roundBet = state.currentRoundBet;
-                winnings = roundBet * state.flip.currentMultiplier;
-                message = `Cashed out ${formatCurrency(winnings, false)} after a ${state.flip.streak}-flip streak!`;
-                resetFlipGame(true); // Clear bet on cashout
             } else {
                 return; // Not a cash-outable game
             }
@@ -1058,9 +989,7 @@
             
             // Play win sound - use streak for games with streak mechanics
             let streak = 1;
-            if (state.currentGame === 'flip' && state.flip.streak) {
-                streak = state.flip.streak;
-            } else if (state.currentGame === 'mines' && state.mines.gemsFound) {
+            if (state.currentGame === 'mines' && state.mines.gemsFound) {
                 streak = state.mines.gemsFound;
             }
             soundSystem.playWin(streak);
@@ -1094,10 +1023,6 @@
                 gameMessageEl.textContent = `You hit a mine!`;
                 revealAllMines();
             }
-             else if (state.currentGame === 'flip') {
-                gameMessageEl.textContent = `Streak broken! You lost.`;
-                resetFlipGame(true); // Clear bet on loss
-            }
             state.runStats.overall.losses++;
             state.runStats[state.currentGame].losses++;
             state.runStats.cashHistory.push({ bet: state.runStats.overall.wins + state.runStats.overall.losses, cash: state.currentCash });
@@ -1125,7 +1050,6 @@
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
             state.blackjack.status = 'betting';
-            resetFlipGame(false); // Don't clear flip bet during resetGameRound to preserve streaks
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
@@ -1772,106 +1696,6 @@
             }, 4500);
         }
 
-        // --- Flip Logic ---
-        function resetFlipGame(clearBet = true) {
-            state.flip.streak = 0;
-            state.flip.currentMultiplier = 1.0;
-            state.flip.status = 'betting';
-            // Only clear roundBet when actually ending the streak (loss/cashout)
-            if (clearBet) {
-                state.flip.roundBet = 0;
-            }
-            flipCoin.style.transition = 'none';
-            flipCoin.style.transform = 'rotateY(0deg)';
-            flipResultText.textContent = '';
-        }
-
-        function startFlipGame() {
-            state.flip.status = 'flipping';
-            state.flip.roundBet = state.currentRoundBet; // Lock in the initial bet for the streak
-            gameMessageEl.textContent = 'Flipping...';
-            flipResultText.textContent = '';
-            updateUI();
-
-            const result = Math.random() < 0.5 ? 'heads' : 'tails';
-            const choice = state.flip.choice;
-
-            const additionalRotation = 1800 + (result === 'tails' ? 180 : 0);
-            flipCoin.style.transition = 'transform 1.5s cubic-bezier(0.45, 0, 0.55, 1)';
-            flipCoin.style.transform = `rotateY(${additionalRotation}deg)`;
-
-            setTimeout(() => {
-                endFlipGame(result, choice);
-            }, 1600);
-        }
-        
-        function continueFlipGame() {
-            if (state.flip.status !== 'won') return;
-
-            state.flip.status = 'flipping';
-            gameMessageEl.textContent = 'Flipping again...';
-            flipResultText.textContent = '';
-            updateUI(); 
-
-            const result = Math.random() < 0.5 ? 'heads' : 'tails';
-            const choice = state.flip.choice;
-            
-            const currentRotationMatch = (flipCoin.style.transform || '').match(/rotateY\(([^)d]+)deg\)/);
-            const currentRotation = currentRotationMatch ? parseFloat(currentRotationMatch[1]) : 0;
-            
-            let additionalRotation = 1800; // 5 full spins
-            if (result === 'tails' && (currentRotation % 360 === 0)) { // currently heads, need to flip to tails
-                additionalRotation += 180;
-            } else if (result === 'heads' && (currentRotation % 360 !== 0)) { // currently tails, need to flip to heads
-                additionalRotation += 180;
-            }
-            
-            flipCoin.style.transition = 'transform 1.5s cubic-bezier(0.45, 0, 0.55, 1)';
-            flipCoin.style.transform = `rotateY(${currentRotation + additionalRotation}deg)`;
-
-            setTimeout(() => {
-                endFlipGame(result, choice);
-            }, 1600);
-        }
-
-        function endFlipGame(result, choice) {
-            // Ensure we always have a sensible bet value when awarding/losing
-            const roundBet = state.flip.roundBet || state.currentRoundBet || state.currentBet || 0;
-            if (result === choice) { // Win
-                if (state.autoBet.isActive) {
-                    const winnings = roundBet * 1.95;
-                    gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
-                    gameMessageEl.style.color = '#4ade80';
-                    // Play win sound even for auto bets
-                    soundSystem.playWin(1);
-                    handleWin(winnings, roundBet);
-                    setTimeout(() => { 
-                        resetGameRound();
-                        updateUI();
-                    }, 500);
-                } else {
-                    // Manual play win logic
-                    state.flip.streak++;
-                    state.flip.currentMultiplier *= 1.95;
-                    state.flip.status = 'won';
-                    // Play win sound for building streak
-                    soundSystem.playWin(state.flip.streak);
-                    flipResultText.textContent = `WIN! (${result.toUpperCase()})`;
-                    flipResultText.style.color = '#4ade80';
-                    updateUI(); // This will update the cashout button and message
-                }
-            } else { // Loss
-                flipResultText.textContent = `LOSS! (It was ${result.toUpperCase()})`;
-                flipResultText.style.color = '#ef4444';
-                handleLoss(roundBet);
-                setTimeout(() => {
-                    resetGameRound();
-                    updateUI();
-                }, 2000);
-            }
-        }
-
-
         // --- UI and Stats Logic ---
         function updateLiveStatsUI() {
             const { overall } = state.runStats;
@@ -1886,7 +1710,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'flip', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -1943,46 +1767,21 @@
             const controlsDisabled = state.gameInProgress || isAutoBetting;
 
             placeBetBtn.disabled = controlsDisabled;
-            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines', 'flip'].includes(state.currentGame) || isAutoBetting;
+            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines'].includes(state.currentGame) || isAutoBetting;
             betAmountInput.disabled = controlsDisabled;
             mineCountInput.disabled = controlsDisabled;
             diceSlider.disabled = controlsDisabled;
             limboTargetInput.disabled = controlsDisabled;
             document.querySelectorAll('#autoBetControls input').forEach(el => el.disabled = isAutoBetting);
             
-            blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn' || controlsDisabled);
+            blackjackControls.classList.toggle('hidden', state.currentGame !== 'blackjack' || state.blackjack.status !== 'playerTurn');
             
             if (state.currentGame === 'crash') {
                 multiplierEl.textContent = `${state.crash.multiplier.toFixed(2)}x`;
             }
 
-            // Flip specific UI
-            if (state.currentGame === 'flip' && !isAutoBetting) {
-                const isStreak = state.flip.status === 'won';
-                placeBetBtn.classList.toggle('hidden', isStreak);
-                flipAgainBtn.classList.toggle('hidden', !isStreak);
-                flipAgainBtn.disabled = state.flip.status !== 'won';
-                // Enable cash out during a streak
-                if (isStreak) {
-                    cashOutBtn.disabled = false;
-                }
-                placeBetBtn.disabled = isStreak || controlsDisabled;
-                cashOutBtn.disabled = !isStreak;
-
-                if (isStreak) {
-                    // Use a fallback for the locked-in round bet so we never compute with 0
-                    const roundBet = state.flip.roundBet || state.currentRoundBet || state.currentBet || 0;
-                    const potentialWinnings = roundBet * state.flip.currentMultiplier;
-                    cashOutBtn.textContent = `Cash Out ${formatCurrency(potentialWinnings, false)}`;
-                    gameMessageEl.textContent = `Streak: ${state.flip.streak} | Multiplier: ${state.flip.currentMultiplier.toFixed(2)}x. Choose again or cash out.`;
-                } else {
-                    cashOutBtn.textContent = 'Cash Out';
-                }
-            } else {
-                placeBetBtn.classList.remove('hidden');
-                flipAgainBtn.classList.add('hidden');
-                cashOutBtn.textContent = 'Cash Out';
-            }
+            placeBetBtn.classList.remove('hidden');
+            cashOutBtn.textContent = 'Cash Out';
         }
 
         function switchGame(gameName) {
@@ -1996,7 +1795,6 @@
             diceControls.classList.toggle('hidden', gameName !== 'dice');
             blackjackControls.classList.toggle('hidden', true); // Always hide on switch
             slideControls.classList.toggle('hidden', gameName !== 'slide');
-            flipControls.classList.toggle('hidden', gameName !== 'flip');
             
             gameMessageEl.textContent = '\u00A0';
             if (gameName === 'limbo') updateLimboUI();
@@ -2043,7 +1841,7 @@
             // Persist run stats into the current account's lifetimeStats
             if (!state.account || !state.account.username) return;
             if (!state.account.lifetimeStats) state.account.lifetimeStats = {};
-            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'flip'];
+            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
                 if (!run) return;
@@ -2170,7 +1968,7 @@
             }
             const acct = state.account;
             document.getElementById('accountSummaryBody').innerHTML = `<div>Username: <strong>${acct.username}</strong></div><div>Level: <strong>${acct.level || 0}</strong></div><div>XP: <strong>${acct.xp || 0}</strong></div><div>Total Runs: <strong>${acct.totalRuns || 0}</strong></div>`;
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'flip', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'overall'];
             const lifeStats = acct.lifetimeStats || {};
             games.forEach(gameKey => {
                 const stats = lifeStats[gameKey] || createEmptyStats();
@@ -2263,7 +2061,6 @@
         gameTabs.forEach(tab => tab.addEventListener('click', () => switchGame(tab.dataset.game)));
         startRunBtn.addEventListener('click', initializeRun);
         placeBetBtn.addEventListener('click', placeBet);
-        flipAgainBtn.addEventListener('click', continueFlipGame);
         cashOutBtn.addEventListener('click', cashOut);
         endRunBtn.addEventListener('click', () => endRun(false));
         playAgainBtn.addEventListener('click', () => {
@@ -2307,15 +2104,6 @@
                 if (state.gameInProgress) return;
                 state.slide.risk = btn.dataset.risk;
                 slideRiskBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-        
-         flipChoiceBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (state.gameInProgress && state.flip.status !== 'won') return;
-                state.flip.choice = btn.dataset.choice;
-                flipChoiceBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
         });
