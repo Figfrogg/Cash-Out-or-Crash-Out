@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -261,40 +262,36 @@
             background-color: #ef4444;
             color: #ffffff;
         }
-         /* New Styles for Flip game */
-        #flipCoinContainer {
-            perspective: 1000px;
-            width: 100px;
-            height: 100px;
-        }
-        #flipCoin {
-            width: 100%;
-            height: 100%;
+        /* New Styles for Snakes game */
+        #snakesBoard {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
             position: relative;
-            transform-style: preserve-3d;
-            transition: transform 1.5s cubic-bezier(0.45, 0, 0.55, 1);
+            transition: top 0.3s ease-in-out;
         }
-        .coin-face {
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            border-radius: 50%;
+        .snakes-tile {
+            aspect-ratio: 1 / 1;
+            background-color: #475569;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            font-weight: 900;
-            border: 5px solid #94a3b8;
-            color: #e2e8f0;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #94a3b8;
+            position: relative;
         }
-        .coin-heads {
-            background: linear-gradient(145deg, #f9a825, #f57f17); /* Gold-ish */
+        .snakes-tile.player-tile {
+            background-color: #4f46e5;
+            box-shadow: 0 0 10px #4f46e5;
+            z-index: 2;
         }
-        .coin-tails {
-            background: linear-gradient(145deg, #78909c, #455a64); /* Silver-ish */
-            transform: rotateY(180deg);
+        .snakes-tile.snake-tile::after {
+            content: '🐍';
+            font-size: 1.2rem;
+            opacity: 0.8;
+            position: absolute;
         }
     </style>
 </head>
@@ -338,7 +335,7 @@
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="blackjack">Blackjack</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="keno">Keno</button>
                 <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="slide">Slide</button>
-                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="flip">Flip</button>
+                <button class="game-tab flex-1 p-2 rounded-md font-semibold btn" data-game="snakes">Snakes</button>
             </div>
 
             <!-- Game Displays -->
@@ -403,17 +400,24 @@
                 </div>
                 <div id="slideHistory" class="live-history-bar"></div>
             </div>
-             <div id="flipGame" class="game-display hidden">
-                <div class="flex flex-col items-center justify-center h-64 bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
-                    <div id="flipCoinContainer">
-                        <div id="flipCoin">
-                            <div class="coin-face coin-heads">H</div>
-                            <div class="coin-face coin-tails">T</div>
+            <div id="snakesGame" class="game-display hidden">
+                <div class="flex flex-col items-center justify-center h-auto bg-slate-900/50 rounded-lg border border-slate-700 p-4 space-y-4">
+                    <div class="flex justify-around w-full text-center mb-2">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-400 uppercase">Position</h3>
+                            <p id="snakesPosition" class="text-2xl font-bold">0</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-400 uppercase">Multiplier</h3>
+                            <p id="snakesMultiplier" class="text-2xl font-bold text-green-400">1.00x</p>
                         </div>
                     </div>
-                    <div id="flipResultText" class="text-xl font-bold h-6"></div>
+                    <div id="snakesBoardContainer" class="w-full max-w-md p-2 bg-slate-800 rounded-lg overflow-hidden" style="height: 130px;">
+                        <div id="snakesBoard"></div>
+                    </div>
+                    <div id="snakesDiceResult" class="text-xl font-bold h-6">&nbsp;</div>
                 </div>
-                <div id="flipHistory" class="live-history-bar"></div>
+                <div id="snakesHistory" class="live-history-bar"></div>
             </div>
             
             <div class="text-center mt-2 mb-4">
@@ -445,11 +449,12 @@
                             <div id="diceControls" class="mt-2 hidden">
                                 <button id="diceBetTypeBtn" class="w-full btn bg-green-600 text-white font-bold py-2 rounded-md">Roll Under 50.00</button>
                             </div>
-                             <div id="flipControls" class="mt-2 hidden">
-                                <label class="block text-sm font-medium mb-1 text-slate-400">Your Pick</label>
+                            <div id="snakesControls" class="mt-2 hidden">
+                                <label class="block text-sm font-medium mb-1 text-slate-400">Difficulty</label>
                                 <div class="flex space-x-2">
-                                    <button class="risk-btn btn flex-1 active" data-choice="heads">Heads</button>
-                                    <button class="risk-btn btn flex-1" data-choice="tails">Tails</button>
+                                    <button class="risk-btn btn flex-1 active" data-difficulty="easy">Easy</button>
+                                    <button class="risk-btn btn flex-1" data-difficulty="medium">Medium</button>
+                                    <button class="risk-btn btn flex-1" data-difficulty="hard">Hard</button>
                                 </div>
                             </div>
                             <div id="blackjackControls" class="mt-2 hidden flex space-x-2">
@@ -467,7 +472,6 @@
                             </div>
                         </div>
                         <div class="flex flex-col space-y-2">
-                             <button id="flipAgainBtn" class="w-full btn btn-primary font-bold py-3 rounded-md hidden">Flip Again</button>
                              <button id="placeBetBtn" class="w-full btn btn-primary font-bold py-3 rounded-md">Place Bet</button>
                              <button id="cashOutBtn" class="w-full btn btn-secondary font-bold py-3 rounded-md" disabled>Cash Out</button>
                         </div>
@@ -824,11 +828,13 @@
         const limboTargetInput = document.getElementById('limboTarget');
         const limboWinChanceEl = document.getElementById('limboWinChance');
         const limboResultDisplay = document.getElementById('limboResultDisplay');
-        const flipControls = document.getElementById('flipControls');
-        const flipChoiceBtns = document.querySelectorAll('#flipControls .risk-btn');
-        const flipCoin = document.getElementById('flipCoin');
-        const flipResultText = document.getElementById('flipResultText');
-        const flipAgainBtn = document.getElementById('flipAgainBtn');
+        const snakesControls = document.getElementById('snakesControls');
+        const snakesDifficultyBtns = document.querySelectorAll('#snakesControls .risk-btn');
+        const snakesBoard = document.getElementById('snakesBoard');
+        const snakesBoardContainer = document.getElementById('snakesBoardContainer');
+        const snakesPositionEl = document.getElementById('snakesPosition');
+        const snakesMultiplierEl = document.getElementById('snakesMultiplier');
+        const snakesDiceResultEl = document.getElementById('snakesDiceResult');
         
         // New Auto Bet DOM Elements
         const manualBetTab = document.getElementById('manualBetTab');
@@ -863,6 +869,13 @@
             medium: [{m:0, w:50, c:'bg-slate-500'}, {m:0.2, w:15, c:'bg-green-500'}, {m:0.5, w:10, c:'bg-green-500'}, {m:1.5, w:10, c:'bg-blue-500'}, {m:3, w:8, c:'bg-blue-500'}, {m:5, w:5, c:'bg-purple-600'}, {m:20, w:2, c:'bg-purple-600'}],
             hard:   [{m:0, w:70, c:'bg-slate-500'}, {m:0.1, w:10, c:'bg-green-500'}, {m:2, w:8, c:'bg-blue-500'}, {m:5, w:5, c:'bg-purple-600'}, {m:10, w:4, c:'bg-purple-600'}, {m:25, w:2, c:'bg-yellow-500'}, {m:100, w:1, c:'bg-yellow-500'}],
             expert: [{m:0, w:94, c:'bg-slate-500'}, {m:5, w:2, c:'bg-purple-600'}, {m:20, w:1.5, c:'bg-yellow-500'}, {m:100, w:1, c:'bg-yellow-500'}, {m:500, w:0.9, c:'bg-yellow-500'}, {m:2000, w:0.5, c:'bg-pink-500'}, {m:10000, w:0.1, c:'bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500'}]
+        };
+        const SNAKES_CONFIG = {
+            boardWidth: 10,
+            visibleRows: 3,
+            easy:   { snakeChance: 0.12, multGrowth: 1.007 },
+            medium: { snakeChance: 0.18, multGrowth: 1.012 },
+            hard:   { snakeChance: 0.25, multGrowth: 1.018 }
         };
 
 
@@ -904,7 +917,7 @@
                 blackjack: { deck: [], playerHand: [], dealerHand: [], playerScore: 0, dealerScore: 0, status: 'betting' },
                 keno: { selectedNumbers: [] },
                 slide: { risk: 'easy' },
-                flip: { choice: 'heads', streak: 0, currentMultiplier: 1.0, status: 'betting' },
+                snakes: { difficulty: 'easy', playerPosition: 0, currentMultiplier: 1.0, status: 'betting', isRolling: false },
                 runStats: {
                     cashHistory: [{ bet: 0, cash: 100.00 }],
                     overall: createEmptyStats(),
@@ -915,10 +928,10 @@
                     blackjack: createEmptyStats(),
                     keno: createEmptyStats(),
                     slide: createEmptyStats(),
-                    flip: createEmptyStats(),
+                    snakes: createEmptyStats(),
                 },
                 history: {
-                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [], flip: [],
+                    crash: [], limbo: [], mines: [], dice: [], blackjack: [], keno: [], slide: [], snakes: [],
                 },
                 autoBet: {
                     isActive: false,
@@ -975,6 +988,10 @@
     // Account XP/level system replaces old firewall mechanic
 
         function placeBet() {
+            if (state.currentGame === 'snakes' && state.snakes.status === 'playing') {
+                rollSnakesDice();
+                return;
+            }
             if (state.gameInProgress) return;
             let betAmount = state.autoBet.isActive ? state.autoBet.currentBet : parseFloat(betAmountInput.value);
 
@@ -1011,7 +1028,7 @@
             if (state.currentGame === 'blackjack') startBlackjackGame();
             if (state.currentGame === 'keno') startKenoGame();
             if (state.currentGame === 'slide') startSlideGame();
-            if (state.currentGame === 'flip') startFlipGame();
+            if (state.currentGame === 'snakes') startSnakesGame();
             
             updateUI();
         }
@@ -1031,11 +1048,10 @@
                 roundBet = state.mines.roundBet || state.currentRoundBet;
                 winnings = roundBet * state.mines.payoutMultiplier;
                 message = `Cashed out ${formatCurrency(winnings, false)} with ${state.mines.gemsFound} gems!`;
-            } else if (state.currentGame === 'flip') {
-                roundBet = state.currentRoundBet;
-                winnings = roundBet * state.flip.currentMultiplier;
-                message = `Cashed out ${formatCurrency(winnings, false)} after a ${state.flip.streak}-flip streak!`;
-                resetFlipGame(true); // Clear bet on cashout
+            } else if (state.currentGame === 'snakes') {
+                roundBet = state.snakes.roundBet || state.currentRoundBet;
+                winnings = roundBet * state.snakes.currentMultiplier;
+                message = `Cashed out ${formatCurrency(winnings, false)} at position ${state.snakes.playerPosition}!`;
             } else {
                 return; // Not a cash-outable game
             }
@@ -1058,10 +1074,10 @@
             
             // Play win sound - use streak for games with streak mechanics
             let streak = 1;
-            if (state.currentGame === 'flip' && state.flip.streak) {
-                streak = state.flip.streak;
-            } else if (state.currentGame === 'mines' && state.mines.gemsFound) {
+            if (state.currentGame === 'mines' && state.mines.gemsFound) {
                 streak = state.mines.gemsFound;
+            } else if (state.currentGame === 'snakes' && state.snakes.playerPosition > 0) {
+                streak = Math.floor(state.snakes.playerPosition / SNAKES_CONFIG.boardWidth);
             }
             soundSystem.playWin(streak);
             
@@ -1094,9 +1110,8 @@
                 gameMessageEl.textContent = `You hit a mine!`;
                 revealAllMines();
             }
-             else if (state.currentGame === 'flip') {
-                gameMessageEl.textContent = `Streak broken! You lost.`;
-                resetFlipGame(true); // Clear bet on loss
+            else if (state.currentGame === 'snakes') {
+                gameMessageEl.textContent = `You landed on a snake! Bust.`;
             }
             state.runStats.overall.losses++;
             state.runStats[state.currentGame].losses++;
@@ -1125,10 +1140,14 @@
             state.mines.gemsFound = 0;
             state.mines.payoutMultiplier = 1.0;
             state.blackjack.status = 'betting';
-            resetFlipGame(false); // Don't clear flip bet during resetGameRound to preserve streaks
+            state.snakes.status = 'betting';
+            state.snakes.isRolling = false;
+            state.snakes.playerPosition = 0;
+            state.snakes.currentMultiplier = 1.0;
             if (state.crash) state.crash.roundBet = 0;
             if (state.mines) state.mines.roundBet = 0;
             if (state.blackjack) state.blackjack.roundBet = 0;
+            if (state.snakes) state.snakes.roundBet = 0;
         }
 
         function endRun(wasBust = false) {
@@ -1772,102 +1791,93 @@
             }, 4500);
         }
 
-        // --- Flip Logic ---
-        function resetFlipGame(clearBet = true) {
-            state.flip.streak = 0;
-            state.flip.currentMultiplier = 1.0;
-            state.flip.status = 'betting';
-            // Only clear roundBet when actually ending the streak (loss/cashout)
-            if (clearBet) {
-                state.flip.roundBet = 0;
-            }
-            flipCoin.style.transition = 'none';
-            flipCoin.style.transform = 'rotateY(0deg)';
-            flipResultText.textContent = '';
+        // --- Snakes Logic ---
+        function isSnake(tileNumber, difficulty) {
+            // Use a deterministic (but random-looking) formula based on tile number
+            // to decide if a tile is a snake. This way, the board is infinite but consistent.
+            if (tileNumber <= 10) return false; // First row is always safe
+            const config = SNAKES_CONFIG[difficulty];
+            // A simple pseudo-random check using sine function
+            const rand = Math.sin(tileNumber * 12.9898 + difficulty.charCodeAt(0) * 78.233) * 43758.5453;
+            return (rand - Math.floor(rand)) < config.snakeChance;
         }
 
-        function startFlipGame() {
-            state.flip.status = 'flipping';
-            state.flip.roundBet = state.currentRoundBet; // Lock in the initial bet for the streak
-            gameMessageEl.textContent = 'Flipping...';
-            flipResultText.textContent = '';
-            updateUI();
+        function renderSnakesBoard() {
+            snakesBoard.innerHTML = '';
+            const { playerPosition, difficulty } = state.snakes;
+            const { boardWidth, visibleRows } = SNAKES_CONFIG;
 
-            const result = Math.random() < 0.5 ? 'heads' : 'tails';
-            const choice = state.flip.choice;
-
-            const additionalRotation = 1800 + (result === 'tails' ? 180 : 0);
-            flipCoin.style.transition = 'transform 1.5s cubic-bezier(0.45, 0, 0.55, 1)';
-            flipCoin.style.transform = `rotateY(${additionalRotation}deg)`;
-
-            setTimeout(() => {
-                endFlipGame(result, choice);
-            }, 1600);
-        }
-        
-        function continueFlipGame() {
-            if (state.flip.status !== 'won') return;
-
-            state.flip.status = 'flipping';
-            gameMessageEl.textContent = 'Flipping again...';
-            flipResultText.textContent = '';
-            updateUI(); 
-
-            const result = Math.random() < 0.5 ? 'heads' : 'tails';
-            const choice = state.flip.choice;
+            const playerRow = Math.floor(playerPosition / boardWidth);
+            const startRow = Math.max(0, playerRow - 1);
+            const endRow = startRow + visibleRows;
             
-            const currentRotationMatch = (flipCoin.style.transform || '').match(/rotateY\(([^)d]+)deg\)/);
-            const currentRotation = currentRotationMatch ? parseFloat(currentRotationMatch[1]) : 0;
-            
-            let additionalRotation = 1800; // 5 full spins
-            if (result === 'tails' && (currentRotation % 360 === 0)) { // currently heads, need to flip to tails
-                additionalRotation += 180;
-            } else if (result === 'heads' && (currentRotation % 360 !== 0)) { // currently tails, need to flip to heads
-                additionalRotation += 180;
-            }
-            
-            flipCoin.style.transition = 'transform 1.5s cubic-bezier(0.45, 0, 0.55, 1)';
-            flipCoin.style.transform = `rotateY(${currentRotation + additionalRotation}deg)`;
+            const totalTilesToRender = (endRow - startRow) * boardWidth;
+            const startTile = startRow * boardWidth;
 
-            setTimeout(() => {
-                endFlipGame(result, choice);
-            }, 1600);
-        }
+            for (let i = 0; i < totalTilesToRender; i++) {
+                const tileNumber = startTile + i + 1;
+                const tile = document.createElement('div');
+                tile.classList.add('snakes-tile');
+                tile.textContent = tileNumber;
 
-        function endFlipGame(result, choice) {
-            // Ensure we always have a sensible bet value when awarding/losing
-            const roundBet = state.flip.roundBet || state.currentRoundBet || state.currentBet || 0;
-            if (result === choice) { // Win
-                if (state.autoBet.isActive) {
-                    const winnings = roundBet * 1.95;
-                    gameMessageEl.textContent = `You won ${formatCurrency(winnings, false)}!`;
-                    gameMessageEl.style.color = '#4ade80';
-                    // Play win sound even for auto bets
-                    soundSystem.playWin(1);
-                    handleWin(winnings, roundBet);
-                    setTimeout(() => { 
-                        resetGameRound();
-                        updateUI();
-                    }, 500);
-                } else {
-                    // Manual play win logic
-                    state.flip.streak++;
-                    state.flip.currentMultiplier *= 1.95;
-                    state.flip.status = 'won';
-                    // Play win sound for building streak
-                    soundSystem.playWin(state.flip.streak);
-                    flipResultText.textContent = `WIN! (${result.toUpperCase()})`;
-                    flipResultText.style.color = '#4ade80';
-                    updateUI(); // This will update the cashout button and message
+                if (tileNumber === playerPosition) {
+                    tile.classList.add('player-tile');
                 }
-            } else { // Loss
-                flipResultText.textContent = `LOSS! (It was ${result.toUpperCase()})`;
-                flipResultText.style.color = '#ef4444';
-                handleLoss(roundBet);
+                if (isSnake(tileNumber, difficulty)) {
+                    tile.classList.add('snake-tile');
+                }
+                snakesBoard.appendChild(tile);
+            }
+            
+            const boardTopOffset = (startRow > 0) ? -((snakesBoardContainer.offsetHeight / visibleRows) * (startRow - (playerRow-1))) : 0;
+            snakesBoard.style.position = 'relative';
+            snakesBoard.style.top = `${boardTopOffset}px`;
+        }
+
+        function startSnakesGame() {
+            state.snakes.status = 'playing';
+            state.snakes.playerPosition = 0;
+            state.snakes.currentMultiplier = 1.0;
+            state.snakes.roundBet = state.currentRoundBet;
+            snakesDiceResultEl.textContent = '\u00A0';
+            gameMessageEl.textContent = "Roll the dice to move!";
+            renderSnakesBoard();
+            updateUI();
+        }
+
+        function rollSnakesDice() {
+            state.snakes.isRolling = true;
+            updateUI();
+            const die1 = Math.floor(Math.random() * 6) + 1;
+            const die2 = Math.floor(Math.random() * 6) + 1;
+            const roll = die1 + die2;
+            snakesDiceResultEl.textContent = `You rolled a ${roll} (${die1} + ${die2})`;
+
+            const newPosition = state.snakes.playerPosition + roll;
+            const difficulty = state.snakes.difficulty;
+            
+            if (isSnake(newPosition, difficulty)) {
+                state.snakes.playerPosition = newPosition;
+                renderSnakesBoard();
                 setTimeout(() => {
+                    handleLoss(state.snakes.roundBet);
                     resetGameRound();
                     updateUI();
-                }, 2000);
+                }, 1000);
+            } else {
+                const oldPosition = state.snakes.playerPosition;
+                state.snakes.playerPosition = newPosition;
+                // Increase multiplier for every step taken
+                state.snakes.currentMultiplier *= Math.pow(SNAKES_CONFIG[difficulty].multGrowth, roll);
+                
+                renderSnakesBoard();
+                updateUI();
+                // Play a win sound based on how many rows they've climbed
+                soundSystem.playWin(Math.floor(newPosition / SNAKES_CONFIG.boardWidth));
+                setTimeout(() => {
+                    state.snakes.isRolling = false;
+                    updateUI();
+                }, 300);
             }
         }
 
@@ -1886,7 +1896,7 @@
 
         function renderStatsModal() {
             statsTableBody.innerHTML = '';
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'flip', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'snakes', 'overall'];
             games.forEach(gameKey => {
                 const stats = state.runStats[gameKey];
                 if (!stats) return;
@@ -1940,10 +1950,16 @@
             }
             
             const isAutoBetting = state.autoBet.isActive;
-            const controlsDisabled = state.gameInProgress || isAutoBetting;
 
-            placeBetBtn.disabled = controlsDisabled;
-            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines', 'flip'].includes(state.currentGame) || isAutoBetting;
+            let disableBetBtn = isAutoBetting || state.gameInProgress;
+            if (state.currentGame === 'snakes' && state.snakes.status === 'playing') {
+                // For Snakes, the button is enabled during play, unless rolling.
+                disableBetBtn = isAutoBetting || state.snakes.isRolling;
+            }
+            placeBetBtn.disabled = disableBetBtn;
+            
+            const controlsDisabled = state.gameInProgress || isAutoBetting;
+            cashOutBtn.disabled = !state.gameInProgress || !['crash', 'mines', 'snakes'].includes(state.currentGame) || isAutoBetting;
             betAmountInput.disabled = controlsDisabled;
             mineCountInput.disabled = controlsDisabled;
             diceSlider.disabled = controlsDisabled;
@@ -1956,32 +1972,23 @@
                 multiplierEl.textContent = `${state.crash.multiplier.toFixed(2)}x`;
             }
 
-            // Flip specific UI
-            if (state.currentGame === 'flip' && !isAutoBetting) {
-                const isStreak = state.flip.status === 'won';
-                placeBetBtn.classList.toggle('hidden', isStreak);
-                flipAgainBtn.classList.toggle('hidden', !isStreak);
-                flipAgainBtn.disabled = state.flip.status !== 'won';
-                // Enable cash out during a streak
-                if (isStreak) {
-                    cashOutBtn.disabled = false;
-                }
-                placeBetBtn.disabled = isStreak || controlsDisabled;
-                cashOutBtn.disabled = !isStreak;
-
-                if (isStreak) {
-                    // Use a fallback for the locked-in round bet so we never compute with 0
-                    const roundBet = state.flip.roundBet || state.currentRoundBet || state.currentBet || 0;
-                    const potentialWinnings = roundBet * state.flip.currentMultiplier;
-                    cashOutBtn.textContent = `Cash Out ${formatCurrency(potentialWinnings, false)}`;
-                    gameMessageEl.textContent = `Streak: ${state.flip.streak} | Multiplier: ${state.flip.currentMultiplier.toFixed(2)}x. Choose again or cash out.`;
-                } else {
-                    cashOutBtn.textContent = 'Cash Out';
-                }
+            // Snakes specific UI
+            if (state.currentGame === 'snakes') {
+                const isPlaying = state.snakes.status === 'playing';
+                placeBetBtn.textContent = isPlaying ? 'Roll Dice' : 'Place Bet';
+                cashOutBtn.disabled = !isPlaying || isAutoBetting;
+                 if (isPlaying) {
+                     const roundBet = state.snakes.roundBet || state.currentRoundBet || 0;
+                     const potentialWinnings = roundBet * state.snakes.currentMultiplier;
+                     cashOutBtn.textContent = `Cash Out ${formatCurrency(potentialWinnings, false)}`;
+                 } else {
+                     cashOutBtn.textContent = 'Cash Out';
+                 }
+                snakesPositionEl.textContent = state.snakes.playerPosition;
+                snakesMultiplierEl.textContent = `${state.snakes.currentMultiplier.toFixed(2)}x`;
             } else {
-                placeBetBtn.classList.remove('hidden');
-                flipAgainBtn.classList.add('hidden');
-                cashOutBtn.textContent = 'Cash Out';
+                 placeBetBtn.textContent = 'Place Bet';
+                 cashOutBtn.textContent = 'Cash Out';
             }
         }
 
@@ -1996,7 +2003,7 @@
             diceControls.classList.toggle('hidden', gameName !== 'dice');
             blackjackControls.classList.toggle('hidden', true); // Always hide on switch
             slideControls.classList.toggle('hidden', gameName !== 'slide');
-            flipControls.classList.toggle('hidden', gameName !== 'flip');
+            snakesControls.classList.toggle('hidden', gameName !== 'snakes');
             
             gameMessageEl.textContent = '\u00A0';
             if (gameName === 'limbo') updateLimboUI();
@@ -2004,6 +2011,9 @@
             if (gameName === 'keno') {
                 renderKenoBoard();
                 updateKenoPayouts();
+            }
+            if (gameName === 'snakes') {
+                renderSnakesBoard();
             }
             renderHistoryBar();
             updateUI();
@@ -2043,7 +2053,7 @@
             // Persist run stats into the current account's lifetimeStats
             if (!state.account || !state.account.username) return;
             if (!state.account.lifetimeStats) state.account.lifetimeStats = {};
-            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'flip'];
+            const games = ['overall', 'crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'snakes'];
             games.forEach(gameKey => {
                 const run = state.runStats[gameKey];
                 if (!run) return;
@@ -2170,7 +2180,7 @@
             }
             const acct = state.account;
             document.getElementById('accountSummaryBody').innerHTML = `<div>Username: <strong>${acct.username}</strong></div><div>Level: <strong>${acct.level || 0}</strong></div><div>XP: <strong>${acct.xp || 0}</strong></div><div>Total Runs: <strong>${acct.totalRuns || 0}</strong></div>`;
-            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'flip', 'overall'];
+            const games = ['crash', 'limbo', 'mines', 'dice', 'blackjack', 'keno', 'slide', 'snakes', 'overall'];
             const lifeStats = acct.lifetimeStats || {};
             games.forEach(gameKey => {
                 const stats = lifeStats[gameKey] || createEmptyStats();
@@ -2263,7 +2273,6 @@
         gameTabs.forEach(tab => tab.addEventListener('click', () => switchGame(tab.dataset.game)));
         startRunBtn.addEventListener('click', initializeRun);
         placeBetBtn.addEventListener('click', placeBet);
-        flipAgainBtn.addEventListener('click', continueFlipGame);
         cashOutBtn.addEventListener('click', cashOut);
         endRunBtn.addEventListener('click', () => endRun(false));
         playAgainBtn.addEventListener('click', () => {
@@ -2311,11 +2320,11 @@
             });
         });
         
-         flipChoiceBtns.forEach(btn => {
+        snakesDifficultyBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                if (state.gameInProgress && state.flip.status !== 'won') return;
-                state.flip.choice = btn.dataset.choice;
-                flipChoiceBtns.forEach(b => b.classList.remove('active'));
+                if (state.gameInProgress) return;
+                state.snakes.difficulty = btn.dataset.difficulty;
+                snakesDifficultyBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             });
         });
