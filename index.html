@@ -2012,6 +2012,8 @@
             }
             state.blackjack.status = 'betting';
             state.blackjack.dealerVisibleHand = [];
+            // Reset dealer score display
+            dealerScoreEl.textContent = '?';
             // Clear any card animations
             document.querySelectorAll('.card.bust, .card.blackjack, .card.dealt').forEach(card => {
                 card.classList.remove('bust', 'blackjack', 'dealt');
