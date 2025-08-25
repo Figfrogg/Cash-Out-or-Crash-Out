@@ -2696,11 +2696,11 @@
                     // MASSIVE payouts for 20-24 mines - even 1 gem gets you rich!
                     if (state.mines.mineCount === 24 && state.mines.gemsFound === 1) {
                         // JACKPOT: 1 gem on 24 mines = 50x!
-                        baseMultiplier = 50.0;
+                        baseMultiplier = 25.0;
                     } else {
                         // High base payouts for 20-24 mines
                         // Formula: baseMultiplier = 10.0 + (mineCount - 20) * 2.0 + gemsFound * 5.0
-                        baseMultiplier = 10.0 + (state.mines.mineCount - 20) * 2.0 + state.mines.gemsFound * 5.0;
+                        baseMultiplier = (10.0 + (state.mines.mineCount - 20) * 2.0 + state.mines.gemsFound * 5.0) * 0.5;
                         
                         // Additional exponential growth for multiple gems
                         if (state.mines.gemsFound > 1) {
