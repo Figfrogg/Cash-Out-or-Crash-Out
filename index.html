@@ -2137,17 +2137,17 @@
                 return; // Not a cash-outable game
             }
             
-            // Final safety check to prevent $0 payouts
+            // Check for glitch - if winnings are zero, refund the bet
             if (!winnings || winnings <= 0) {
-                console.error('CRITICAL: $0 payout detected!', {
+                console.log('Glitch detected: $0 payout, refunding bet', {
                     game: state.currentGame,
                     roundBet: roundBet,
                     multiplier: state.currentGame === 'crash' ? state.crash.multiplier : 
                                state.currentGame === 'mines' ? state.mines.payoutMultiplier : 
                                state.currentGame === 'hilo' ? state.hilo.multiplier : 'unknown'
                 });
-                // Force a minimum payout to prevent $0
-                winnings = Math.max(roundBet, 1);
+                // Refund the bet due to glitch
+                winnings = roundBet;
             }
             
             gameMessageEl.textContent = message;
@@ -2158,16 +2158,16 @@
         }
 
         function handleWin(winnings, betAmount) {
-            // CRITICAL SAFETY CHECK: Prevent $0 payouts
+            // Check for glitch - if winnings are zero, refund the bet
             if (!winnings || winnings <= 0) {
-                console.error('CRITICAL: handleWin called with $0 winnings!', {
+                console.log('Glitch detected: $0 winnings, refunding bet', {
                     winnings: winnings,
                     betAmount: betAmount,
                     game: state.currentGame,
                     stack: new Error().stack
                 });
-                // Force minimum payout to prevent $0
-                winnings = Math.max(betAmount || 1, 1);
+                // Refund the bet due to glitch
+                winnings = betAmount;
             }
             
             const profit = winnings - betAmount;
@@ -3544,13 +3544,13 @@
             
             const winnings = roundBet * state.hilo.multiplier;
             
-            // Safety check to prevent $0 payouts
+            // Check for glitch - if winnings are zero, refund the bet
             if (!winnings || winnings <= 0) {
-                console.error('HILO CASHOUT: $0 payout detected!', {
+                console.log('HILO CASHOUT: Glitch detected - $0 payout, refunding bet', {
                     roundBet: roundBet,
                     multiplier: state.hilo.multiplier
                 });
-                return; // Don't cash out with $0 payout
+                winnings = roundBet; // Refund the bet due to glitch
             }
             
             gameMessageEl.textContent = `Cashed out with ${state.hilo.correctGuesses} correct guesses! Won ${formatCurrency(winnings, false)}!`;
