@@ -2137,17 +2137,33 @@
                 return; // Not a cash-outable game
             }
             
-            // Check for glitch - if winnings are zero, refund the bet
+            // Check for glitch - if winnings are zero, try to fix the payout
             if (!winnings || winnings <= 0) {
-                console.log('Glitch detected: $0 payout, refunding bet', {
+                console.log('Glitch detected: $0 payout, attempting to fix...', {
                     game: state.currentGame,
                     roundBet: roundBet,
                     multiplier: state.currentGame === 'crash' ? state.crash.multiplier : 
                                state.currentGame === 'mines' ? state.mines.payoutMultiplier : 
                                state.currentGame === 'hilo' ? state.hilo.multiplier : 'unknown'
                 });
-                // Refund the bet due to glitch
-                winnings = roundBet;
+                
+                // Try to fix the payout by recalculating
+                let fixedWinnings = 0;
+                if (state.currentGame === 'crash') {
+                    fixedWinnings = roundBet * state.crash.multiplier;
+                } else if (state.currentGame === 'mines') {
+                    fixedWinnings = roundBet * state.mines.payoutMultiplier;
+                } else if (state.currentGame === 'hilo') {
+                    fixedWinnings = roundBet * state.hilo.multiplier;
+                }
+                
+                if (fixedWinnings > 0) {
+                    console.log('Payout fixed successfully:', { original: winnings, fixed: fixedWinnings });
+                    winnings = fixedWinnings;
+                } else {
+                    console.log('Payout fix failed, refunding bet');
+                    winnings = roundBet; // Refund the bet if fix fails
+                }
             }
             
             gameMessageEl.textContent = message;
@@ -2158,16 +2174,47 @@
         }
 
         function handleWin(winnings, betAmount) {
-            // Check for glitch - if winnings are zero, refund the bet
+            // Check for glitch - if winnings are zero, try to fix the payout
             if (!winnings || winnings <= 0) {
-                console.log('Glitch detected: $0 winnings, refunding bet', {
+                console.log('Glitch detected: $0 winnings, attempting to fix...', {
                     winnings: winnings,
                     betAmount: betAmount,
                     game: state.currentGame,
                     stack: new Error().stack
                 });
-                // Refund the bet due to glitch
-                winnings = betAmount;
+                
+                // Try to fix the payout by recalculating based on the game
+                let fixedWinnings = 0;
+                if (state.currentGame === 'crash') {
+                    fixedWinnings = betAmount * state.crash.multiplier;
+                } else if (state.currentGame === 'mines') {
+                    fixedWinnings = betAmount * state.mines.payoutMultiplier;
+                } else if (state.currentGame === 'hilo') {
+                    fixedWinnings = betAmount * state.hilo.multiplier;
+                } else if (state.currentGame === 'dice') {
+                    fixedWinnings = betAmount * state.dice.multiplier;
+                } else if (state.currentGame === 'limbo') {
+                    fixedWinnings = betAmount * state.limbo.target;
+                } else if (state.currentGame === 'blackjack') {
+                    fixedWinnings = betAmount * 2; // Standard blackjack payout
+                } else if (state.currentGame === 'keno') {
+                    // For keno, we'd need the actual hits to recalculate
+                    fixedWinnings = betAmount; // Fallback to refund
+                } else if (state.currentGame === 'slide') {
+                    // For slide, we'd need the actual result to recalculate
+                    fixedWinnings = betAmount; // Fallback to refund
+                } else if (state.currentGame === 'diamonds') {
+                    // For diamonds, we'd need the actual hand to recalculate
+                    fixedWinnings = betAmount; // Fallback to refund
+                }
+                
+                if (fixedWinnings > 0) {
+                    console.log('Payout fixed successfully:', { original: winnings, fixed: fixedWinnings });
+                    winnings = fixedWinnings;
+                } else {
+                    console.log('Payout fix failed, refunding bet');
+                    winnings = betAmount; // Refund the bet if fix fails
+                }
             }
             
             const profit = winnings - betAmount;
@@ -2911,7 +2958,10 @@
             state.blackjack.dealerHand = [];
             state.blackjack.dealerVisibleHand = [];
             state.blackjack.status = 'betting';
-            state.blackjack.roundBet = state.currentRoundBet;
+            
+            // Ensure roundBet is properly set with fallback
+            state.blackjack.roundBet = state.currentRoundBet || state.currentBet || 10;
+            console.log('BLACKJACK: Starting game with roundBet:', state.blackjack.roundBet);
             
             // Clear hands
             playerHandEl.innerHTML = '';
@@ -2966,20 +3016,22 @@
                         
                         if (dealerScore === 21) {
                             // Push
+                            const roundBet = state.blackjack.roundBet || state.currentRoundBet || state.currentBet || 10;
                             gameMessageEl.textContent = "Blackjack! It's a push.";
                             gameMessageEl.style.color = '#fbbf24';
                             setTimeout(() => {
-                                handleWin(state.blackjack.roundBet, state.blackjack.roundBet); // Return bet
+                                handleWin(roundBet, roundBet); // Return bet
                                 setTimeout(resetGameRound, 2000);
                             }, 1000);
                         } else {
                             // Player wins with Blackjack
-                            const winnings = state.blackjack.roundBet * 2.5; // 3:2 payout
+                            const roundBet = state.blackjack.roundBet || state.currentRoundBet || state.currentBet || 10;
+                            const winnings = roundBet * 2.5; // 3:2 payout
                             gameMessageEl.textContent = `Blackjack! You win ${formatCurrency(winnings, false)}!`;
                             gameMessageEl.style.color = '#4ade80';
                             soundSystem.playBlackjackWin();
                             setTimeout(() => {
-                                handleWin(winnings, state.blackjack.roundBet);
+                                handleWin(winnings, roundBet);
                                 setTimeout(resetGameRound, 2000);
                             }, 1000);
                         }
@@ -3160,11 +3212,23 @@
         function endBlackjackHand() {
             const playerScore = state.blackjack.playerScore;
             const dealerScore = state.blackjack.dealerScore;
-            const roundBet = state.blackjack.roundBet;
+            let roundBet = state.blackjack.roundBet;
+            
+            // Safety check for invalid roundBet
+            if (!roundBet || roundBet <= 0) {
+                console.log('BLACKJACK: Invalid roundBet detected, attempting to fix...', {
+                    blackjackRoundBet: state.blackjack.roundBet,
+                    currentRoundBet: state.currentRoundBet,
+                    currentBet: state.currentBet
+                });
+                roundBet = state.currentRoundBet || state.currentBet || 10; // Fallback values
+                console.log('BLACKJACK: Fixed roundBet to:', roundBet);
+            }
             
             if (dealerScore > 21) {
                 // Dealer busts
-                gameMessageEl.textContent = `Dealer busts! You win ${formatCurrency(roundBet * 2, false)}!`;
+                const winnings = roundBet * 2;
+                gameMessageEl.textContent = `Dealer busts! You win ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
                 soundSystem.playBlackjackWin();
                 
@@ -3173,17 +3237,18 @@
                 dealerCards.forEach(card => card.classList.add('bust'));
                 
                 setTimeout(() => {
-                    handleWin(roundBet * 2, roundBet);
+                    handleWin(winnings, roundBet);
                     setTimeout(resetGameRound, 2000);
                 }, 1000);
             } else if (playerScore > dealerScore) {
                 // Player wins
-                gameMessageEl.textContent = `You win ${formatCurrency(roundBet * 2, false)}!`;
+                const winnings = roundBet * 2;
+                gameMessageEl.textContent = `You win ${formatCurrency(winnings, false)}!`;
                 gameMessageEl.style.color = '#4ade80';
                 soundSystem.playBlackjackWin();
                 
                 setTimeout(() => {
-                    handleWin(roundBet * 2, roundBet);
+                    handleWin(winnings, roundBet);
                     setTimeout(resetGameRound, 2000);
                 }, 1000);
             } else if (dealerScore > playerScore) {
@@ -3544,13 +3609,23 @@
             
             const winnings = roundBet * state.hilo.multiplier;
             
-            // Check for glitch - if winnings are zero, refund the bet
+            // Check for glitch - if winnings are zero, try to fix the payout
             if (!winnings || winnings <= 0) {
-                console.log('HILO CASHOUT: Glitch detected - $0 payout, refunding bet', {
+                console.log('HILO CASHOUT: Glitch detected - $0 payout, attempting to fix...', {
                     roundBet: roundBet,
                     multiplier: state.hilo.multiplier
                 });
-                winnings = roundBet; // Refund the bet due to glitch
+                
+                // Try to fix the payout by recalculating
+                const fixedWinnings = roundBet * state.hilo.multiplier;
+                
+                if (fixedWinnings > 0) {
+                    console.log('HILO payout fixed successfully:', { original: winnings, fixed: fixedWinnings });
+                    winnings = fixedWinnings;
+                } else {
+                    console.log('HILO payout fix failed, refunding bet');
+                    winnings = roundBet; // Refund the bet if fix fails
+                }
             }
             
             gameMessageEl.textContent = `Cashed out with ${state.hilo.correctGuesses} correct guesses! Won ${formatCurrency(winnings, false)}!`;
